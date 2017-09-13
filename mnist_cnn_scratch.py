@@ -3,6 +3,7 @@ import tensorflow as tf
 
 mnist = input_data.read_data_sets('MNIST-data', one_hot=True)
 
+
 def weight_variable(shape):
     initial = tf.truncated_normal(shape=shape, stddev=0.1)
     return tf.Variable(initial, name='weight_var')
@@ -23,6 +24,9 @@ def max_pool_2x2(x):
 
 x = tf.placeholder(tf.float32, shape=[None, 784], name='train_images')
 y_ = tf.placeholder(tf.float32, shape=[None, 10], name='train_labels')
+
+# For tf.variable_scope vs tf.name_scope,
+#  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
 
 with tf.name_scope('reshape'):
     x_image = tf.reshape(x, [-1, 28, 28, 1], name='reshaped_images')
