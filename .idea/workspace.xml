@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7f58bb4a-337d-4eca-bcbf-0171062653e3" name="Default" comment="" />
+    <list default="true" id="7f58bb4a-337d-4eca-bcbf-0171062653e3" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mnist_cnn_scratch.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
     <ignored path="mnist.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -19,14 +23,46 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="mnist_cnn.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="mnist_cnn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mnist_cnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1035">
+            <state relative-caret-position="-257">
               <caret line="69" column="40" lean-forward="false" selection-start-line="69" selection-start-column="40" selection-end-line="69" selection-end-column="40" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mnist_cnn_scratch.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/mnist_cnn_scratch.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="60">
+              <caret line="4" column="41" lean-forward="false" selection-start-line="4" selection-start-column="41" selection-end-line="4" selection-end-column="41" />
+              <folding>
+                <element signature="e#0#58#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="pyvenv.cfg" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/.env/pyvenv.cfg">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -44,7 +80,7 @@
       <file leaf-file-name="export.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/export/export.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="161">
+            <state relative-caret-position="1425">
               <caret line="111" column="4" lean-forward="false" selection-start-line="111" selection-start-column="4" selection-end-line="111" selection-end-column="4" />
               <folding />
             </state>
@@ -54,7 +90,7 @@
       <file leaf-file-name="optimizer.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/training/optimizer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="269">
+            <state relative-caret-position="3630">
               <caret line="242" column="39" lean-forward="false" selection-start-line="242" selection-start-column="36" selection-end-line="242" selection-end-column="39" />
               <folding>
                 <element signature="e#753#791#0" expanded="true" />
@@ -76,28 +112,8 @@
       <file leaf-file-name="gradient_descent.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/training/gradient_descent.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="129">
-              <caret line="27" column="45" lean-forward="true" selection-start-line="27" selection-start-column="45" selection-end-line="27" selection-end-column="45" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="model_fn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/model_fn.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="600">
-              <caret line="55" column="22" lean-forward="false" selection-start-line="55" selection-start-column="22" selection-end-line="55" selection-end-column="22" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="estimator_lib.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/estimator_lib.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="285">
+              <caret line="27" column="45" lean-forward="false" selection-start-line="27" selection-start-column="45" selection-end-line="27" selection-end-column="45" />
               <folding />
             </state>
           </provider>
@@ -106,7 +122,7 @@
       <file leaf-file-name="estimator.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/estimator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="403">
+            <state relative-caret-position="6000">
               <caret line="433" column="23" lean-forward="false" selection-start-line="433" selection-start-column="23" selection-end-line="433" selection-end-column="23" />
               <folding />
             </state>
@@ -138,11 +154,15 @@
       <find>_images</find>
     </findStrings>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/cnn_mnist.py" />
         <option value="$PROJECT_DIR$/mnist_cnn.py" />
+        <option value="$PROJECT_DIR$/mnist_cnn_scratch.py" />
       </list>
     </option>
   </component>
@@ -170,6 +190,7 @@
       </profile-state>
     </entry>
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
       <flattenPackages />
@@ -192,7 +213,18 @@
           <expand>
             <path>
               <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mnist" type="462c0819:PsiDirectoryNode" />
+              <item name="cnn" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cnn" type="462c0819:PsiDirectoryNode" />
+              <item name=".env" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cnn" type="462c0819:PsiDirectoryNode" />
+              <item name=".env" type="462c0819:PsiDirectoryNode" />
+              <item name="bin" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
@@ -202,134 +234,6 @@
               <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
               <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
               <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="contrib" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="contrib" type="462c0819:PsiDirectoryNode" />
-              <item name="learn" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="contrib" type="462c0819:PsiDirectoryNode" />
-              <item name="learn" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="contrib" type="462c0819:PsiDirectoryNode" />
-              <item name="learn" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="learn" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="contrib" type="462c0819:PsiDirectoryNode" />
-              <item name="learn" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="learn" type="462c0819:PsiDirectoryNode" />
-              <item name="datasets" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="estimator" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="estimator" type="462c0819:PsiDirectoryNode" />
-              <item name="export" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="estimator" type="462c0819:PsiDirectoryNode" />
-              <item name="inputs" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="ops" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="ops" type="462c0819:PsiDirectoryNode" />
-              <item name="losses" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mnist" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-              <item name="&lt; Python 3.6.2 (~/homebrew/bin/python3) &gt;" type="70bed36:NamedLibraryElementNode" />
-              <item name="site-packages" type="462c0819:PsiDirectoryNode" />
-              <item name="tensorflow" type="462c0819:PsiDirectoryNode" />
-              <item name="python" type="462c0819:PsiDirectoryNode" />
-              <item name="training" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -338,9 +242,8 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$USER_HOME$/photos_map_env/bin/python" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
-    <property name="settings.editor.splitter.proportion" value="0.2" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/.env/bin/python3" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="FullScreen" value="false" />
   </component>
   <component name="RecentsManager">
@@ -360,7 +263,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.mnist_cnn_scratch">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -483,6 +386,28 @@
       <option name="USE_KEYWORD" value="false" />
       <method />
     </configuration>
+    <configuration name="mnist_cnn_scratch" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="mnist" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/mnist_cnn_scratch.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+    </configuration>
+    <recent_temporary>
+      <list size="1">
+        <item index="0" class="java.lang.String" itemvalue="Python.mnist_cnn_scratch" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
     <option name="remove_strategy" value="false" />
@@ -507,8 +432,8 @@
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24930556" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32958803" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -543,35 +468,10 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/model_fn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="600">
-          <caret line="55" column="22" lean-forward="false" selection-start-line="55" selection-start-column="22" selection-end-line="55" selection-end-column="22" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/estimator_lib.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/estimator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4650">
-          <caret line="343" column="60" lean-forward="true" selection-start-line="343" selection-start-column="60" selection-end-line="343" selection-end-column="60" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/layers/layers.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -579,9 +479,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="5280">
           <caret line="352" column="12" lean-forward="false" selection-start-line="352" selection-start-column="6" selection-end-line="352" selection-end-column="12" />
-          <folding>
-            <element signature="e#903#941#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -589,7 +486,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="22995">
           <caret line="1552" column="10" lean-forward="false" selection-start-line="1552" selection-start-column="7" selection-end-line="1552" selection-end-column="10" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -597,7 +493,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1425">
           <caret line="112" column="17" lean-forward="false" selection-start-line="112" selection-start-column="9" selection-end-line="112" selection-end-column="17" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -605,7 +500,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -623,7 +517,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -631,9 +524,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4995">
           <caret line="352" column="12" lean-forward="false" selection-start-line="352" selection-start-column="6" selection-end-line="352" selection-end-column="12" />
-          <folding>
-            <element signature="e#903#941#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -641,7 +531,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="22995">
           <caret line="1552" column="10" lean-forward="false" selection-start-line="1552" selection-start-column="7" selection-end-line="1552" selection-end-column="10" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -649,7 +538,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1425">
           <caret line="112" column="17" lean-forward="false" selection-start-line="112" selection-start-column="9" selection-end-line="112" selection-end-column="17" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -657,7 +545,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -686,7 +573,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -704,9 +590,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#903#941#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -714,7 +597,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -722,7 +604,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -751,7 +632,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -779,7 +659,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -808,7 +687,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -816,7 +694,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1425">
           <caret line="112" column="17" lean-forward="false" selection-start-line="112" selection-start-column="9" selection-end-line="112" selection-end-column="17" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -824,7 +701,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="22995">
           <caret line="1552" column="10" lean-forward="false" selection-start-line="1552" selection-start-column="7" selection-end-line="1552" selection-end-column="10" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -832,9 +708,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="5280">
           <caret line="352" column="12" lean-forward="false" selection-start-line="352" selection-start-column="6" selection-end-line="352" selection-end-column="12" />
-          <folding>
-            <element signature="e#903#941#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -842,7 +715,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -850,7 +722,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="258">
           <caret line="358" column="4" lean-forward="false" selection-start-line="358" selection-start-column="4" selection-end-line="358" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -880,15 +751,15 @@
     </entry>
     <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/training/gradient_descent.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="129">
-          <caret line="27" column="45" lean-forward="true" selection-start-line="27" selection-start-column="45" selection-end-line="27" selection-end-column="45" />
+        <state relative-caret-position="285">
+          <caret line="27" column="45" lean-forward="false" selection-start-line="27" selection-start-column="45" selection-end-line="27" selection-end-column="45" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/training/optimizer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="269">
+        <state relative-caret-position="3630">
           <caret line="242" column="39" lean-forward="false" selection-start-line="242" selection-start-column="36" selection-end-line="242" selection-end-column="39" />
           <folding>
             <element signature="e#753#791#0" expanded="true" />
@@ -900,13 +771,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-90">
           <caret line="595" column="4" lean-forward="false" selection-start-line="595" selection-start-column="4" selection-end-line="595" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/estimator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="403">
+        <state relative-caret-position="6000">
           <caret line="433" column="23" lean-forward="false" selection-start-line="433" selection-start-column="23" selection-end-line="433" selection-end-column="23" />
           <folding />
         </state>
@@ -916,13 +786,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2625">
           <caret line="187" column="13" lean-forward="false" selection-start-line="187" selection-start-column="6" selection-end-line="187" selection-end-column="13" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/homebrew/lib/python3.6/site-packages/tensorflow/python/estimator/export/export.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="161">
+        <state relative-caret-position="1425">
           <caret line="111" column="4" lean-forward="false" selection-start-line="111" selection-start-column="4" selection-end-line="111" selection-end-column="4" />
           <folding />
         </state>
@@ -932,7 +801,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1073">
           <caret line="150" column="6" lean-forward="false" selection-start-line="150" selection-start-column="6" selection-end-line="150" selection-end-column="6" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -940,7 +808,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="428">
           <caret line="44" column="4" lean-forward="false" selection-start-line="44" selection-start-column="4" selection-end-line="44" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -952,12 +819,38 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/.env/pyvenv.cfg">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/mnist_cnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1035">
+        <state relative-caret-position="-257">
           <caret line="69" column="40" lean-forward="false" selection-start-line="69" selection-start-column="40" selection-end-line="69" selection-end-column="40" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mnist_cnn_scratch.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="41" lean-forward="false" selection-start-line="4" selection-start-column="41" selection-end-line="4" selection-end-column="41" />
+          <folding>
+            <element signature="e#0#58#0" expanded="true" />
           </folding>
         </state>
       </provider>
