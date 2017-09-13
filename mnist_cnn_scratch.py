@@ -4,6 +4,7 @@ import numpy as np
 
 mnist = input_data.read_data_sets('MNIST-data', one_hot=True)
 
+
 def weight_variable(shape):
     initial = tf.truncated_normal(shape=shape, stddev=0.1)
     return tf.Variable(initial, name='weight_var')
@@ -86,9 +87,10 @@ classification_signature = tf.saved_model.signature_def_utils.build_signature_de
     },
     method_name=tf.saved_model.signature_constants.CLASSIFY_METHOD_NAME)
 
+saver = tf.train.Saver()
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
-    for i in range(1):
+    for i in range(200):
         batch = mnist.train.next_batch(50)
         if i % 100 == 0:
             train_accuracy = accuracy.eval(feed_dict={
@@ -96,6 +98,8 @@ with tf.Session() as session:
             })
             print("step %d, accuracy=%f" % (i, train_accuracy))
         training_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+        if i % 50 == 0:
+            saver.save(session, '/tmp/model.%d.ckpt' % i)
     test_accuracy = accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0
     })
