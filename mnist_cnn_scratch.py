@@ -1,5 +1,6 @@
 from tensorflow.examples.tutorials.mnist import input_data
 import tensorflow as tf
+import numpy as np
 
 mnist = input_data.read_data_sets('MNIST-data', one_hot=True)
 
@@ -70,9 +71,25 @@ training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.arg_max(y_conv, 1), tf.arg_max(y_, 1), name='compare_prediction')
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
+export_dir = '/tmp/cnn_model'
+builder = tf.saved_model.builder.SavedModelBuilder(export_dir=export_dir)
+classification_inputs = tf.saved_model.utils.build_tensor_info(tf.placeholder(tf.string, name='tf_example'))
+classification_outputs = tf.saved_model.utils.build_tensor_info(tf.constant(dtype=tf.int32, value=np.zeros(10)))
+classification_output_scores = tf.saved_model.utils.build_tensor_info(tf.constant(dtype='float', value=0.0))
+
+classification_signature = tf.saved_model.signature_def_utils.build_signature_def(
+    inputs={
+        tf.saved_model.signature_constants.CLASSIFY_INPUTS: classification_inputs,
+    },
+    outputs={
+        tf.saved_model.signature_constants.CLASSIFY_OUTPUT_CLASSES: classification_outputs,
+        tf.saved_model.signature_constants.CLASSIFY_OUTPUT_SCORES: classification_output_scores,
+    },
+    method_name=tf.saved_model.signature_constants.CLASSIFY_METHOD_NAME)
+
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
-    for i in range(50):
+    for i in range(1):
         batch = mnist.train.next_batch(50)
         if i % 100 == 0:
             train_accuracy = accuracy.eval(feed_dict={
@@ -83,4 +100,8 @@ with tf.Session() as session:
     test_accuracy = accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0
     })
+    builder.add_meta_graph_and_variables(sess=session, signature_def_map={
+        tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: classification_signature},
+                                         tags=[tf.saved_model.tag_constants.SERVING])
+    builder.save(as_text=True)
     print("test accuracy=%f" % test_accuracy)
