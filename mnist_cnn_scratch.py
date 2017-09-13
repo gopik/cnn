@@ -4,7 +4,6 @@ import numpy as np
 
 mnist = input_data.read_data_sets('MNIST-data', one_hot=True)
 
-
 def weight_variable(shape):
     initial = tf.truncated_normal(shape=shape, stddev=0.1)
     return tf.Variable(initial, name='weight_var')
@@ -73,7 +72,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 export_dir = '/tmp/cnn_model'
 builder = tf.saved_model.builder.SavedModelBuilder(export_dir=export_dir)
-classification_inputs = tf.saved_model.utils.build_tensor_info(tf.placeholder(tf.string, name='tf_example'))
+classification_inputs = tf.saved_model.utils.build_tensor_info(tf.placeholder(tf.string))
 classification_outputs = tf.saved_model.utils.build_tensor_info(tf.constant(dtype=tf.int32, value=np.zeros(10)))
 classification_output_scores = tf.saved_model.utils.build_tensor_info(tf.constant(dtype='float', value=0.0))
 
