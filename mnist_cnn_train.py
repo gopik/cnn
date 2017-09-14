@@ -68,13 +68,13 @@ with tf.name_scope('fc1'):
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
 with tf.name_scope('dropout'):
-    keep_prob = tf.placeholder(tf.float32)
+    keep_prob = tf.placeholder(tf.float32, name='keep_prob')
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
 with tf.name_scope('readout'):
     W_fc2 = weight_variable([1024, 10])
     b_fc2 = bias_variable([10])
-    y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+    y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2), b_fc2, name='y_conv')
 
 cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv), name='cross_entropy')
 global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32)
@@ -93,8 +93,8 @@ summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation
 def export_saved_model(export_dir, session, as_text):
     builder = tf.saved_model.builder.SavedModelBuilder(export_dir=export_dir)
     classification_inputs = tf.saved_model.utils.build_tensor_info(tf.placeholder(tf.string))
-    classification_outputs = tf.saved_model.utils.build_tensor_info(tf.constant(dtype=tf.int32, value=np.zeros(10)))
-    classification_output_scores = tf.saved_model.utils.build_tensor_info(tf.constant(dtype='float', value=0.0))
+    classification_outputs = tf.saved_model.utils.build_tensor_info(y_conv)
+    classification_output_scores = tf.saved_model.utils.build_tensor_info(tf.constant(dtype='float', value=np.zeros(10)))
 
     classification_signature = tf.saved_model.signature_def_utils.build_signature_def(
         inputs={
