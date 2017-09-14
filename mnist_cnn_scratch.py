@@ -11,6 +11,7 @@ parser.add_argument('--checkpoint_dir',
                     help='Path to load/save checkpoint. If provided, latest checkpoint will be loaded from here')
 parser.add_argument('--checkpoint_every', type=int, help='Num iterations to checkpoint after', default=100)
 parser.add_argument('--batch_size', type=int, default=50)
+parser.add_argument('--log_dir', default='/tmp/cnn')
 
 args = parser.parse_args()
 
@@ -75,8 +76,8 @@ with tf.name_scope('readout'):
     b_fc2 = bias_variable([10])
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
-summary_writer_train = tf.summary.FileWriter('/tmp/mnist_scratch/train', graph=tf.get_default_graph())
-summary_writer_val = tf.summary.FileWriter('/tmp/mnist_scratch/val', graph=tf.get_default_graph())
+summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=tf.get_default_graph())
+summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=tf.get_default_graph())
 
 
 cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
@@ -86,9 +87,8 @@ rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_step
 training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, global_step=global_step)
 correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-tf.summary.scalar(name='accuracy', tensor=accuracy, collections=['training', 'validation'])
-tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy, collections=['training', 'validation'])
-
+tf.summary.scalar(name='accuracy', tensor=accuracy)
+tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
 def export_saved_model(export_dir, session, as_text):
     builder = tf.saved_model.builder.SavedModelBuilder(export_dir=export_dir)
@@ -136,7 +136,7 @@ with tf.Session() as sess:
                 saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
             print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
 
-        summaries, _, step_id = sess.run([tf.summary.merge_all(key='training'), training_step, global_step],
+        summaries, _, step_id = sess.run([tf.summary.merge_all(), training_step, global_step],
                                          feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.8})
         summary_writer_train.add_summary(summaries, step_id)
         # Sample 100 images from validation
@@ -144,7 +144,7 @@ with tf.Session() as sess:
         validation_images = mnist.validation.images[val_indices]
         validation_labels = mnist.validation.labels[val_indices]
 
-        summaries, _ = sess.run([tf.summary.merge_all(key='validation'), training_step],
+        summaries, _ = sess.run([tf.summary.merge_all(), training_step],
                                 feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
         summary_writer_val.add_summary(summaries, step_id)
 
