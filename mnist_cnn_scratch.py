@@ -11,7 +11,7 @@ parser.add_argument('--checkpoint_dir',
                     help='Path to load/save checkpoint. If provided, latest checkpoint will be loaded from here')
 parser.add_argument('--checkpoint_every', type=int, help='Num iterations to checkpoint after', default=100)
 parser.add_argument('--batch_size', type=int, default=50)
-parser.add_argument('--log_dir', default='/tmp/cnn')
+parser.add_argument('--logdir', default='/tmp/cnn/logs')
 
 args = parser.parse_args()
 
@@ -76,11 +76,7 @@ with tf.name_scope('readout'):
     b_fc2 = bias_variable([10])
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
-summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=tf.get_default_graph())
-summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=tf.get_default_graph())
-
-
-cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
+cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv), name='cross_entropy')
 global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32)
 rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
 
@@ -89,6 +85,9 @@ correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='comp
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 tf.summary.scalar(name='accuracy', tensor=accuracy)
 tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
+
+summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=tf.get_default_graph())
+summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=tf.get_default_graph())
 
 def export_saved_model(export_dir, session, as_text):
     builder = tf.saved_model.builder.SavedModelBuilder(export_dir=export_dir)
