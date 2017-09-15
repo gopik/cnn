@@ -68,7 +68,7 @@ with tf.name_scope('fc1'):
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
 with tf.name_scope('dropout'):
-    keep_prob = tf.placeholder(tf.float32, name='keep_prob')
+    keep_prob = tf.placeholder_with_default(1.0, name='keep_prob', shape=())
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
 with tf.name_scope('readout'):
@@ -92,19 +92,17 @@ summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation
 
 def export_saved_model(export_dir, session, as_text):
     builder = tf.saved_model.builder.SavedModelBuilder(export_dir=export_dir)
-    classification_inputs = tf.saved_model.utils.build_tensor_info(tf.placeholder(tf.string))
-    classification_outputs = tf.saved_model.utils.build_tensor_info(y_conv)
-    classification_output_scores = tf.saved_model.utils.build_tensor_info(tf.constant(dtype='float', value=np.zeros(10)))
+    classification_inputs = tf.saved_model.utils.build_tensor_info(x)
+    classification_output_scores = tf.saved_model.utils.build_tensor_info(y_conv)
 
     classification_signature = tf.saved_model.signature_def_utils.build_signature_def(
         inputs={
-            tf.saved_model.signature_constants.CLASSIFY_INPUTS: classification_inputs,
+            tf.saved_model.signature_constants.PREDICT_INPUTS: classification_inputs,
         },
         outputs={
-            tf.saved_model.signature_constants.CLASSIFY_OUTPUT_CLASSES: classification_outputs,
-            tf.saved_model.signature_constants.CLASSIFY_OUTPUT_SCORES: classification_output_scores,
+            tf.saved_model.signature_constants.PREDICT_OUTPUTS: classification_output_scores,
         },
-        method_name=tf.saved_model.signature_constants.CLASSIFY_METHOD_NAME)
+        method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME)
 
     builder.add_meta_graph_and_variables(sess=session, signature_def_map={
         tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: classification_signature},
