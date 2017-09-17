@@ -86,28 +86,29 @@ def create_sprite_image(images, height, width):
 
 
 def main():
+    config = projector.ProjectorConfig()
+    embedding = config.embeddings.add()
+
     images, file_list = load_images(args.images_dir, args.max_images)
     images_tensor = images.reshape(images.shape[0], -1)
-
-    sprite_image = create_sprite_image(images, sprite_image_height, sprite_image_width)
-    sprite_image_path = os.path.join(args.logdir, 'sprite.png')
-    cv2.imwrite(sprite_image_path, sprite_image)
+    embedding_var = tf.Variable(images_tensor, dtype=tf.float32, name='embedding')
+    embedding.tensor_name = embedding_var.name
 
     metadata_path = os.path.join(args.logdir, 'metadata.tsv')
+    embedding.metadata_path = metadata_path
     with open(metadata_path, 'w') as metadata:
         for file_name in file_list:
             metadata.write(file_name)
             metadata.write('\n')
 
-    config = projector.ProjectorConfig()
-    embedding = config.embeddings.add()
-    embedding_var = tf.Variable(images_tensor, dtype=tf.float32, name='embedding')
-    embedding.tensor_name = embedding_var.name
-    # Link this tensor to its metadata file (e.g. labels).
-    embedding.metadata_path = metadata_path
-    summary_writer = tf.summary.FileWriter(args.logdir, graph=tf.get_default_graph())
+    sprite_image = create_sprite_image(images, sprite_image_height, sprite_image_width)
+    sprite_image_path = os.path.join(args.logdir, 'sprite.png')
+    cv2.imwrite(sprite_image_path, sprite_image)
+
     embedding.sprite.image_path = sprite_image_path
     embedding.sprite.single_image_dim.extend([sprite_image_height, sprite_image_width])
+
+    summary_writer = tf.summary.FileWriter(args.logdir, graph=tf.get_default_graph())
 
     # The next line writes a projector_config.pbtxt in the LOG_DIR. TensorBoard will
     # read this file during startup.
