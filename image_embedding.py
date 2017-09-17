@@ -8,7 +8,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--logdir', help='log dir to store checkpoints and metadata')
-parser.add_argument('--max_images', help='number of images to load', default=900)
+parser.add_argument('--max_images', type=int, help='number of images to load', default=900)
 parser.add_argument('--images_dir', help='directory containing images')
 
 args = parser.parse_args()
@@ -34,9 +34,11 @@ def load_images(images_dir, max_images):
     i = 0
     img_list = []
     file_list = []
+    print(max_images)
     for f in glob.glob(os.path.join(images_dir, '*.jpg')):
         if i == max_images:
             break
+        print(i, '==', max_images)
         img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         img = cv2.resize(img, dsize=(28, 28))
         # Extend a new axis along which the list of images will be concatenated.
@@ -44,6 +46,8 @@ def load_images(images_dir, max_images):
         img_list.append(img)
         file_list.append(os.path.basename(f))
         i += 1
+        print(i)
+    print(len(img_list))
     return np.vstack(img_list), file_list
 
 
@@ -61,6 +65,8 @@ def create_sprite_image(images, height, width):
     Returns: numpy array representing the sprite image."""
 
     num_images_per_row = int(np.ceil(np.sqrt(images.shape[0])))
+    print(images.shape[0])
+    print(num_images_per_row)
     sprite = np.zeros(shape=(num_images_per_row * height, num_images_per_row * width))
     nrows = num_images_per_row
     ncols = num_images_per_row
