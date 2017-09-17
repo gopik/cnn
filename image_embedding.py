@@ -4,64 +4,107 @@ from tensorflow.contrib.tensorboard.plugins import projector
 import numpy as np
 import glob
 import cv2
+import argparse
 
-LOG_DIR = '/tmp/embedding/logs'
+parser = argparse.ArgumentParser()
+parser.add_argument('--logdir', help='log dir to store checkpoints and metadata')
+parser.add_argument('--max_images', help='number of images to load', default=900)
+parser.add_argument('--images_dir', help='directory containing images')
+
+args = parser.parse_args()
 
 # Create randomly initialized embedding weights which will be trained.
-vocabulary_size = 40
-embedding_size = 64
+num_images = args.max_images
+sprite_image_height = 16
+sprite_image_width = 16
 
-images = np.zeros(shape=(vocabulary_size, embedding_size))
+image_height = 28
+image_width = 28
 
-sprite = np.zeros(shape=(7*8, 7*8))
 
-i = 0
-j = 0
-k = 0
+def load_images(images_dir, max_images):
+    """Loads images from files in directory and returns a np array of shape (n, h, w)
 
-metadata = open( os.path.join(LOG_DIR, 'metadata.tsv'), 'w')
-for f in glob.glob('/Users/gopik/Downloads/chars/resized/*.jpg'):
-    print("i=%d, j=%d, k=%d" % (i, j, k))
-    if k == 40:
-        break
-    metadata.write('%s\n' % f)
-    img = cv2.imread(f)
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    sprite[i:i+8, j:j+8] = cv2.resize(img, dsize=(8, 8))
-    j += 8
-    if j == 7*8:
-        i += 8
-        j = 0
-    images[k] = cv2.resize(img, dsize=(8, 8)).reshape(64)
-    k += 1
+    Args:
+        images_dir: Directory to load images from.
+        max_images: Maximum number of images to load.
 
-metadata.close()
+    Returns:
+        (images(shape=[n, h, w]), filelist([string])"""
+    i = 0
+    img_list = []
+    filelist = []
+    for f in glob.glob(os.path.join(images_dir, '*.jpg')):
+        if i == max_images:
+            break
+        img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
+        img_list.append(cv2.resize(img, dsize=(28, 28)))
+        filelist.append(os.path.basename(f))
+    return np.vstack(img_list)
 
-# Format: tensorflow/tensorboard/plugins/projector/projector_config.proto
-config = projector.ProjectorConfig()
 
-# You can add multiple embeddings. Here we add only one.
-embedding = config.embeddings.add()
-embedding_var = tf.Variable(images, dtype=tf.float32, name='embedding')
+def create_sprite_image(images, height, width):
+    """Creates sprite image from input images.
 
-embedding.tensor_name = embedding_var.name
-# Link this tensor to its metadata file (e.g. labels).
-embedding.metadata_path = os.path.join(LOG_DIR, 'metadata.tsv')
+    Full sprite image is a square. The individual small images need not be square. The images are stored in the sprite
+    in a row major order.
 
-# Use the same LOG_DIR where you stored your checkpoint.
-summary_writer = tf.summary.FileWriter(LOG_DIR, graph=tf.get_default_graph())
-cv2.imwrite('/tmp/embedding/logs/sprite.png', sprite)
-embedding.sprite.image_path = '/tmp/embedding/logs/sprite.png'
-embedding.sprite.single_image_dim.extend([8, 8])
+    Args:
+        images: numpy array of shape (num_images, actual_image_height, actual_image_width).
+        height: height of individual image in the sprite.
+        width: width of individual image in the sprite.
 
-# The next line writes a projector_config.pbtxt in the LOG_DIR. TensorBoard will
-# read this file during startup.
-projector.visualize_embeddings(summary_writer, config)
+    Returns: numpy array representing the sprite image."""
 
-saver = tf.train.Saver()
+    num_images_per_row = int(np.ceil(np.sqrt(images.shape[0])))
+    sprite = np.zeros(shape=(num_images_per_row * height, num_images_per_row * width))
+    nrows = num_images_per_row
+    ncols = num_images_per_row
 
-with tf.Session(graph=tf.get_default_graph()) as sess:
-    sess.run(tf.global_variables_initializer())
-    saver.save(sess, '/tmp/embedding/logs/ckpt')
+    for i in range(nrows):
+        for j in range(ncols):
+            img = images[i * ncols + j]
+            sprite_img = cv2.resize(img, dsize=(height, width))
+            pixel_row_start, pixel_col_start = i * height, j * width
+            pixel_row_end, pixel_col_end = (i + 1) * height, (j + 1) * width
+            sprite[pixel_row_start:pixel_row_end, pixel_col_start:pixel_col_end] = sprite_img
 
-summary_writer.close()
+    return sprite
+
+
+def main(unused_args):
+    images, file_list = load_images(args.images_dir)
+
+    sprite_image = create_sprite_image(images, sprite_image_height, sprite_image_width)
+    sprite_image_path = os.path.join(args.logdir, 'sprite.png')
+    cv2.imwrite(sprite_image_path, sprite_image)
+
+    metadata_path = os.path.join(args.logdir, 'metadata.tsv')
+    with open(metadata_path, 'w') as metadata:
+        metadata.writelines(file_list)
+
+    config = projector.ProjectorConfig()
+    embedding = config.embeddings.add()
+    embedding_var = tf.Variable(images, dtype=tf.float32, name='embedding')
+    embedding.tensor_name = embedding_var.name
+    # Link this tensor to its metadata file (e.g. labels).
+    embedding.metadata_path = metadata_path
+    summary_writer = tf.summary.FileWriter(args.logdir, graph=tf.get_default_graph())
+    embedding.sprite.image_path = sprite_image_path
+    embedding.sprite.single_image_dim.extend([sprite_image_height, sprite_image_width])
+
+    # The next line writes a projector_config.pbtxt in the LOG_DIR. TensorBoard will
+    # read this file during startup.
+    projector.visualize_embeddings(summary_writer, config)
+
+    saver = tf.train.Saver()
+
+    with tf.Session(graph=tf.get_default_graph()) as sess:
+        sess.run(tf.global_variables_initializer())
+        saver.save(sess, '/tmp/embedding/logs/ckpt')
+
+    summary_writer.close()
+
+
+if __name__ == '__main__':
+    main()
