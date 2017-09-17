@@ -38,9 +38,13 @@ def load_images(images_dir, max_images):
         if i == max_images:
             break
         img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
-        img_list.append(cv2.resize(img, dsize=(28, 28)))
+        img = cv2.resize(img, dsize=(28, 28))
+        # Extend a new axis along which the list of images will be concatenated.
+        img = img[np.newaxis, ...]
+        img_list.append(img)
         file_list.append(os.path.basename(f))
-    return np.vstack(img_list)
+        i += 1
+    return np.vstack(img_list), file_list
 
 
 def create_sprite_image(images, height, width):
@@ -63,7 +67,10 @@ def create_sprite_image(images, height, width):
 
     for i in range(nrows):
         for j in range(ncols):
-            img = images[i * ncols + j]
+            image_idx = i * ncols + j
+            if image_idx == images.shape[0]:
+                break
+            img = images[image_idx]
             sprite_img = cv2.resize(img, dsize=(height, width))
             pixel_row_start, pixel_col_start = i * height, j * width
             pixel_row_end, pixel_col_end = (i + 1) * height, (j + 1) * width
@@ -74,6 +81,7 @@ def create_sprite_image(images, height, width):
 
 def main():
     images, file_list = load_images(args.images_dir, args.max_images)
+    images_tensor = images.reshape(images.shape[0], -1)
 
     sprite_image = create_sprite_image(images, sprite_image_height, sprite_image_width)
     sprite_image_path = os.path.join(args.logdir, 'sprite.png')
@@ -81,11 +89,13 @@ def main():
 
     metadata_path = os.path.join(args.logdir, 'metadata.tsv')
     with open(metadata_path, 'w') as metadata:
-        metadata.writelines(file_list)
+        for file_name in file_list:
+            metadata.write(file_name)
+            metadata.write('\n')
 
     config = projector.ProjectorConfig()
     embedding = config.embeddings.add()
-    embedding_var = tf.Variable(images, dtype=tf.float32, name='embedding')
+    embedding_var = tf.Variable(images_tensor, dtype=tf.float32, name='embedding')
     embedding.tensor_name = embedding_var.name
     # Link this tensor to its metadata file (e.g. labels).
     embedding.metadata_path = metadata_path
