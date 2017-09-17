@@ -30,16 +30,16 @@ def load_images(images_dir, max_images):
         max_images: Maximum number of images to load.
 
     Returns:
-        (images(shape=[n, h, w]), filelist([string])"""
+        (images(shape=[n, h, w]), file_list([string])"""
     i = 0
     img_list = []
-    filelist = []
+    file_list = []
     for f in glob.glob(os.path.join(images_dir, '*.jpg')):
         if i == max_images:
             break
         img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         img_list.append(cv2.resize(img, dsize=(28, 28)))
-        filelist.append(os.path.basename(f))
+        file_list.append(os.path.basename(f))
     return np.vstack(img_list)
 
 
@@ -72,8 +72,8 @@ def create_sprite_image(images, height, width):
     return sprite
 
 
-def main(unused_args):
-    images, file_list = load_images(args.images_dir)
+def main():
+    images, file_list = load_images(args.images_dir, args.max_images)
 
     sprite_image = create_sprite_image(images, sprite_image_height, sprite_image_width)
     sprite_image_path = os.path.join(args.logdir, 'sprite.png')
