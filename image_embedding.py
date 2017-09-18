@@ -69,18 +69,14 @@ def create_sprite_image(images, height, width):
     print(num_images_per_row)
     sprite = np.zeros(shape=(num_images_per_row * height, num_images_per_row * width))
     nrows = num_images_per_row
-    ncols = num_images_per_row
 
-    for i in range(nrows):
-        for j in range(ncols):
-            image_idx = i * ncols + j
-            if image_idx == images.shape[0]:
-                break
-            img = images[image_idx]
-            sprite_img = cv2.resize(img, dsize=(height, width))
-            pixel_row_start, pixel_col_start = i * height, j * width
-            pixel_row_end, pixel_col_end = (i + 1) * height, (j + 1) * width
-            sprite[pixel_row_start:pixel_row_end, pixel_col_start:pixel_col_end] = sprite_img
+    for idx in range(images.shape[0]):
+        img = images[idx]
+        i, j = divmod(idx, nrows)
+        sprite_img = cv2.resize(img, dsize=(height, width))
+        pixel_row_start, pixel_col_start = i * height, j * width
+        pixel_row_end, pixel_col_end = (i + 1) * height, (j + 1) * width
+        sprite[pixel_row_start:pixel_row_end, pixel_col_start:pixel_col_end] = sprite_img
 
     return sprite
 
