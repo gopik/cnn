@@ -5,11 +5,13 @@ import numpy as np
 import glob
 import cv2
 import argparse
+from recognizer import Recognizer
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--logdir', help='log dir to store checkpoints and metadata')
 parser.add_argument('--max_images', type=int, help='number of images to load', default=900)
 parser.add_argument('--images_dir', help='directory containing images')
+parser.add_argument('--save_model_dir', help='Saved model directory')
 
 args = parser.parse_args()
 
@@ -38,7 +40,6 @@ def load_images(images_dir, max_images):
     for f in glob.glob(os.path.join(images_dir, '*.jpg')):
         if i == max_images:
             break
-        print(i, '==', max_images)
         img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         img = cv2.resize(img, dsize=(28, 28))
         # Extend a new axis along which the list of images will be concatenated.
@@ -51,18 +52,22 @@ def load_images(images_dir, max_images):
     return np.vstack(img_list), file_list
 
 
+def recognize_images(images):
+    """Given a tensor of images (N, h, w), returns predictions as (N, num_classes)"""
+    with Recognizer(model_dir=args.save_model_dir) as recognizer:
+        return recognizer.predict(images)
+
+
 def create_sprite_image(images, height, width):
     """Creates sprite image from input images.
 
     Full sprite image is a square. The individual small images need not be square. The images are stored in the sprite
     in a row major order.
 
-    Args:
-        images: numpy array of shape (num_images, actual_image_height, actual_image_width).
-        height: height of individual image in the sprite.
-        width: width of individual image in the sprite.
-
-    Returns: numpy array representing the sprite image."""
+    :param images: numpy array of shape (num_images, actual_image_height, actual_image_width).
+    :param height: height of individual image in the sprite.
+    :param width: width of individual image in the sprite.
+    :return: Numpy array representing sprite image."""
 
     num_images_per_row = int(np.ceil(np.sqrt(images.shape[0])))
     print(images.shape[0])
@@ -86,7 +91,8 @@ def main():
     embedding = config.embeddings.add()
 
     images, file_list = load_images(args.images_dir, args.max_images)
-    images_tensor = images.reshape(images.shape[0], -1)
+    # images_tensor = images.reshape(images.shape[0], -1)
+    images_tensor = recognize_images(images)
     embedding_var = tf.Variable(images_tensor, dtype=tf.float32, name='embedding')
     embedding.tensor_name = embedding_var.name
 
