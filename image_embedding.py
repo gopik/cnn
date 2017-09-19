@@ -7,6 +7,7 @@ import cv2
 import argparse
 from recognizer import Recognizer
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--logdir', help='log dir to store checkpoints and metadata')
 parser.add_argument('--max_images', type=int, help='number of images to load', default=900)
@@ -55,7 +56,7 @@ def load_images(images_dir, max_images):
 def recognize_images(images):
     """Given a tensor of images (N, h, w), returns predictions as (N, num_classes)"""
     with Recognizer(model_dir=args.save_model_dir) as recognizer:
-        return recognizer.predict(images)
+        return recognizer.predict(images/255.0)
 
 
 def create_sprite_image(images, height, width):
@@ -70,8 +71,6 @@ def create_sprite_image(images, height, width):
     :return: Numpy array representing sprite image."""
 
     num_images_per_row = int(np.ceil(np.sqrt(images.shape[0])))
-    print(images.shape[0])
-    print(num_images_per_row)
     sprite = np.zeros(shape=(num_images_per_row * height, num_images_per_row * width))
     nrows = num_images_per_row
 
@@ -91,9 +90,10 @@ def main():
     embedding = config.embeddings.add()
 
     images, file_list = load_images(args.images_dir, args.max_images)
-    # images_tensor = images.reshape(images.shape[0], -1)
     images_tensor = recognize_images(images)
-    embedding_var = tf.Variable(images_tensor, dtype=tf.float32, name='embedding')
+    graph = tf.Graph()
+    with graph.as_default():
+        embedding_var = tf.Variable(images_tensor, dtype=tf.float32, name='embedding')
     embedding.tensor_name = embedding_var.name
 
     metadata_path = os.path.join(args.logdir, 'metadata.tsv')
@@ -116,9 +116,10 @@ def main():
     # read this file during startup.
     projector.visualize_embeddings(summary_writer, config)
 
-    saver = tf.train.Saver()
+    with graph.as_default():
+        saver = tf.train.Saver()
 
-    with tf.Session(graph=tf.get_default_graph()) as sess:
+    with tf.Session(graph=graph) as sess:
         sess.run(tf.global_variables_initializer())
         saver.save(sess, '/tmp/embedding/logs/ckpt')
 
