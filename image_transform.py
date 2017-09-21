@@ -3,6 +3,22 @@
 import numpy as np
 import cv2
 import imutils
+import string
+import os.path
+from PIL import Image, ImageFont, ImageDraw
+import glob
+
+all_chars_list = [c for c in string.ascii_uppercase] + [c for c in string.digits]
+
+
+def gen_all_char_images(image_dir):
+    f = ImageFont.truetype('Arial.ttf', 35)
+    for c in all_chars_list:
+        image = Image.new(color=255, mode='L', size=(30, 40))
+        draw = ImageDraw.Draw(image)
+        draw.text((0, 0), c, font=f)
+        file_path = os.path.join(image_dir, c + '.png')
+        image.save(file_path, 'png')
 
 
 def rotate_image(img, deg):
@@ -56,6 +72,36 @@ warp_specs = [
 translate_matrices = []
 for i in range(-5, 6, 2):
     for j in range(-5, 6, 2):
-        translate_matrices.append(np.array([1, 0, i, 0, 1, j]).reshape(2, 3))
+        translate_matrices.append(np.float32(np.array([1, 0, i, 0, 1, j]).reshape(2, 3)))
+
 
 rotation_deg = [deg for deg in range(-10, 11, 2)]
+
+base_images_dir = '/tmp/fonts/ariel_35'
+output_images_dir = '/tmp/fonts/arial_35_aug'
+
+
+def main(unused_argv):
+    for f in glob.glob(os.path.join(base_images_dir, '*.png')):
+        name, ext = os.path.basename(f).split('.')
+        outdir = os.path.join(output_images_dir, name)
+        os.mkdir(outdir)
+        path = os.path.join(outdir, name + '_orig.png')
+        orig = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
+        cv2.imwrite(path, orig)
+
+        for i in range(len(translate_matrices)):
+            for j in range(len(rotation_deg)):
+                for k in range(len(warp_specs)):
+                    img = translate_image(orig, translate_matrices[i])
+                    img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
+                    img = rotate_image(img, rotation_deg[j])
+                    img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
+                    img = warp_perspective(img, get_warp_matrix(img, warp_specs[k]))
+                    img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
+                    cv2.imwrite(os.path.join(outdir, "%s_%d_%d_%d.png" % (name, i, j, k)), img)
+
+
+
+if __name__ == '__main__':
+    main(None)
