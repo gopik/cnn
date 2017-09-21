@@ -74,7 +74,6 @@ for i in range(-5, 6, 2):
     for j in range(-5, 6, 2):
         translate_matrices.append(np.float32(np.array([1, 0, i, 0, 1, j]).reshape(2, 3)))
 
-
 rotation_deg = [deg for deg in range(-10, 11, 2)]
 
 base_images_dir = '/tmp/fonts/ariel_35'
@@ -100,7 +99,6 @@ def main(unused_argv):
                     img = warp_perspective(img, get_warp_matrix(img, warp_specs[k]))
                     img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
                     cv2.imwrite(os.path.join(outdir, "%s_%d_%d_%d.png" % (name, i, j, k)), img)
-
 
 
 if __name__ == '__main__':
