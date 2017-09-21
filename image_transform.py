@@ -76,19 +76,47 @@ for i in range(-5, 6, 2):
 
 rotation_deg = [deg for deg in range(-10, 11, 2)]
 
-base_images_dir = '/tmp/fonts/ariel_35'
-output_images_dir = '/tmp/fonts/arial_35_aug'
+base_images_dir = '/tmp/fonts/arial_35'
+
+files_list = []
+
+np.random.seed(0)
+
+TRAIN = 0.6
+VAL = 0.8
+TEST = 1.0
+
+train_dir = '/tmp/fonts/train'
+val_dir = '/tmp/fonts/val'
+test_dir = '/tmp/fonts/test'
+
+
+def ensure_dir(dir_path):
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+
+
+def get_random_dir():
+    p = np.random.sample()
+    if p < 0.6:
+        return train_dir
+    elif p < 0.8:
+        return val_dir
+    return test_dir
 
 
 def main(unused_argv):
+    ensure_dir(train_dir)
+    ensure_dir(val_dir)
+    ensure_dir(test_dir)
+
     for f in glob.glob(os.path.join(base_images_dir, '*.png')):
         name, ext = os.path.basename(f).split('.')
-        outdir = os.path.join(output_images_dir, name)
-        os.mkdir(outdir)
+        outdir = os.path.join(get_random_dir(), name)
+        ensure_dir(outdir)
         path = os.path.join(outdir, name + '_orig.png')
         orig = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         cv2.imwrite(path, orig)
-
         for i in range(len(translate_matrices)):
             for j in range(len(rotation_deg)):
                 for k in range(len(warp_specs)):
@@ -98,7 +126,10 @@ def main(unused_argv):
                     img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
                     img = warp_perspective(img, get_warp_matrix(img, warp_specs[k]))
                     img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
-                    cv2.imwrite(os.path.join(outdir, "%s_%d_%d_%d.png" % (name, i, j, k)), img)
+                    outdir = os.path.join(get_random_dir(), name)
+                    ensure_dir(outdir)
+                    path = os.path.join(outdir, "%s_%d_%d_%d.png" % (name, i, j, k))
+                    cv2.imwrite(path, img)
 
 
 if __name__ == '__main__':

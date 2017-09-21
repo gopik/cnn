@@ -14,3 +14,5 @@ python3 mnist_cnn_predict.py --save_model_dir=\<save model dir>
 
 ## Notes
 libfreetype6-dev needed for PIL imagefont true type fonts
+
+Converting images to tfrecord format - https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/build_image_data.py
