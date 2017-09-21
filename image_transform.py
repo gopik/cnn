@@ -90,6 +90,8 @@ train_dir = '/tmp/fonts/train'
 val_dir = '/tmp/fonts/val'
 test_dir = '/tmp/fonts/test'
 
+labels_file_path = '/tmp/fonts/labels.txt'
+
 
 def ensure_dir(dir_path):
     if not os.path.exists(dir_path):
@@ -98,11 +100,21 @@ def ensure_dir(dir_path):
 
 def get_random_dir():
     p = np.random.sample()
-    if p < 0.6:
+    if p < TRAIN:
         return train_dir
-    elif p < 0.8:
+    elif p < VAL:
         return val_dir
     return test_dir
+
+
+def save_image(label, filename, image):
+    outdir = os.path.join(get_random_dir(), label)
+    ensure_dir(outdir)
+    path = os.path.join(outdir, filename)
+    cv2.imwrite(path, image)
+
+
+labels = set({})
 
 
 def main(unused_argv):
@@ -112,11 +124,12 @@ def main(unused_argv):
 
     for f in glob.glob(os.path.join(base_images_dir, '*.png')):
         name, ext = os.path.basename(f).split('.')
-        outdir = os.path.join(get_random_dir(), name)
-        ensure_dir(outdir)
-        path = os.path.join(outdir, name + '_orig.png')
+        label = name
+        labels.add(label)
+        filename = name + '_orig.jpg'
         orig = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
-        cv2.imwrite(path, orig)
+        save_image(name, filename, orig)
+
         for i in range(len(translate_matrices)):
             for j in range(len(rotation_deg)):
                 for k in range(len(warp_specs)):
@@ -126,10 +139,16 @@ def main(unused_argv):
                     img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
                     img = warp_perspective(img, get_warp_matrix(img, warp_specs[k]))
                     img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
-                    outdir = os.path.join(get_random_dir(), name)
-                    ensure_dir(outdir)
-                    path = os.path.join(outdir, "%s_%d_%d_%d.png" % (name, i, j, k))
-                    cv2.imwrite(path, img)
+
+                    filename = "%s_%d_%d_%d.jpeg" % (name, i, j, k)
+                    save_image(label, filename, img)
+
+    labels_file = open(labels_file_path, 'w')
+    for key in labels:
+        labels_file.write(key)
+        labels_file.write('\n')
+
+    labels_file.close()
 
 
 if __name__ == '__main__':
