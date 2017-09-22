@@ -1,6 +1,5 @@
 import argparse
 import os.path
-
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.data.python.ops.dataset_ops import TFRecordDataset
@@ -17,6 +16,17 @@ parser.add_argument('--logdir', default='/tmp/cnn/logs')
 args = parser.parse_args()
 
 
+def get_feature(example_proto):
+    parsed_feature = parse_function(example_proto)
+
+    with tf.name_scope('decode_jpeg'):
+        decoded_image = tf.image.decode_jpeg(parsed_feature['image/encoded'])
+        image = tf.reshape(tf.image.rgb_to_grayscale(decoded_image, "rgb_to_grayscale"),
+                           shape=[40 * 30])
+        label = tf.one_hot(parsed_feature['image/class/label'], depth=37)
+    return image, label
+
+
 def parse_function(example_proto):
     features = {
         'image/height': tf.FixedLenFeature([], tf.int64),
@@ -30,17 +40,18 @@ def parse_function(example_proto):
         'image/encoded': tf.FixedLenFeature([], dtype=tf.string, default_value='')
     }
 
-    parsed_feature = tf.parse_example(example_proto, features=features)
+    parsed_feature = tf.parse_single_example(example_proto, features=features)
+
     return parsed_feature
 
 
 def weight_variable(shape):
-    initial = tf.truncated_normal(shape=shape, stddev=0.1)
+    initial = tf.truncated_normal(shape=shape, stddev=0.5)
     return tf.Variable(initial, name='weight_var')
 
 
 def bias_variable(shape):
-    initial = tf.constant(name='biases', value=0.1, shape=shape)
+    initial = tf.constant(name='biases', value=0.0, shape=shape)
     return tf.Variable(initial, name='bias_var')
 
 
@@ -52,15 +63,15 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
-x = tf.placeholder(tf.float32, shape=[None, 784], name='train_images')
-y_ = tf.placeholder(tf.float32, shape=[None, 10], name='train_labels')
+x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
+y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
 
 # For tf.variable_scope vs tf.name_scope,
 #  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
 
 with tf.name_scope('reshape'):
     # with padding, the image size is 40x32
-    x_image = tf.pad(tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images'), [[0, 0], [0, 0], [1, 1], [0, 0]])
+    x_image = tf.pad(tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images'), [[0, 0], [0, 0], [1, 1], [0, 0]], constant_values=255)
 
 with tf.name_scope('conv1'):
     W_conv1 = weight_variable([3, 3, 1, 32])
@@ -81,30 +92,45 @@ with tf.name_scope('pool2'):
 with tf.name_scope('fc1'):
     W_fc1 = weight_variable([10 * 8 * 64, 1024])
     b_fc1 = bias_variable([1024])
-    h_pool2_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+    h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 64])
+    h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
 with tf.name_scope('dropout'):
     keep_prob = tf.placeholder_with_default(1.0, name='keep_prob', shape=())
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
 with tf.name_scope('readout'):
-    W_fc2 = weight_variable([1024, 36])
-    b_fc2 = bias_variable([36])
+    W_fc2 = weight_variable([1024, 37])
+    b_fc2 = bias_variable([37])
     y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2), b_fc2, name='y_conv')
 
-cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv), name='cross_entropy')
+
+tf.summary.histogram('readout_weights', W_fc2)
+tf.summary.histogram('fc1_weights', W_fc1)
+
+softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
+cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
 global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32)
 rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
 
-training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, global_step=global_step)
+training_step = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy, global_step=global_step)
+
 correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 tf.summary.scalar(name='accuracy', tensor=accuracy)
 tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
+
+train_dataset = TFRecordDataset('/tmp/fonts/out/train-00000-of-00001').map(get_feature).take(1000).repeat(5).batch(batch_size=args.batch_size)
+#val_dataset = TFRecordDataset('/tmp/fonts/out/val-00000-of-00001').map(get_feature).batch(batch_size=args.batch_size)
+
+train_iterator = train_dataset.make_one_shot_iterator()
+next_batch = train_iterator.get_next()
+
+im_summary = tf.summary.image(name='image', tensor=tf.reshape(x_image[:5], [-1, 40, 32, 1]), max_outputs=5)
+
 summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=tf.get_default_graph())
-summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=tf.get_default_graph())
+#summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=tf.get_default_graph())
 
 
 def export_saved_model(export_dir, session, as_text):
@@ -131,11 +157,7 @@ saver = tf.train.Saver()
 
 CHECKPOINT_FILE_NAME = 'checkpoint'
 
-train_dataset = TFRecordDataset('/tmp/fonts/out/train-00000-of-000001').map(parse_function)
-val_dataset = TFRecordDataset('/tmp/fonts/out/val-00000-of-000001').map(parse_function)
-
-val_images_count = len(val_dataset['image/encoded'])
-
+# val_images_count = len(val_dataset['image/encoded'])
 with tf.Session() as sess:
     latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
     if latest_checkpoint:
@@ -143,30 +165,36 @@ with tf.Session() as sess:
     else:
         sess.run(tf.global_variables_initializer())
 
+    #val_iterator = val_dataset.make_one_shot_iterator()
+    images, labels = sess.run(next_batch)
     for i in range(args.num_training_steps):
-        batch = train_dataset.batch(args.batch_size)
         if i % args.checkpoint_every == 0:
             train_accuracy = accuracy.eval(feed_dict={
-                x: batch['image/encoded'], y_: batch['image/class/label'], keep_prob: 1.0
+                x: images, y_: labels, keep_prob: 1.0
             })
             global_step_index = sess.run(global_step,
-                                         feed_dict={x: batch['image/encoded'], y_: batch['image/class/label'],
+                                         feed_dict={x: images, y_: labels,
                                                     keep_prob: 0.5})
             if args.checkpoint_dir:
                 saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
             print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
 
-        summaries, _, step_id = sess.run([tf.summary.merge_all(), training_step, global_step],
-                                         feed_dict={ x: batch['image/encoded'], y_: batch['image/class/label'], keep_prob: 0.5})
-        summary_writer_train.add_summary(summaries, step_id)
-        # Sample 100 images from validation
-        val_indices = np.random.choice(np.arange(val_images_count), 100, replace=False)
-        validation_images = val_dataset[val_indices]['image/encoded']
-        validation_labels = val_dataset[val_indices]['image/class/label']
+        summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run([tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
+                                         feed_dict={x: images, y_: labels,
+                                                    keep_prob: 0.5})
 
-        summaries, _ = sess.run([tf.summary.merge_all(), training_step],
-                                feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
-        summary_writer_val.add_summary(summaries, step_id)
+        # print(np.argmax(y_orig, axis=1))
+        # print(np.argmax(y_comp, axis=1))
+        #
+        print(cross_entropy_val)
+
+        summary_writer_train.add_summary(summaries, step_id)
+        #validation_images = val_dataset[val_indices]['image/encoded']
+        #validation_labels = val_dataset[val_indices]['image/class/label']
+
+        # summaries, _ = sess.run([tf.summary.merge_all(), training_step],
+        #                         feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
+        # summary_writer_val.add_summary(summaries, step_id)
 
     if args.save_model_dir:
         export_saved_model(args.save_model_dir, session=sess, as_text=True)
