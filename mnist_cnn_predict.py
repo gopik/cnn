@@ -3,6 +3,7 @@ from scipy import ndimage
 from recognizer import Recognizer
 import numpy as np
 
+
 def main():
     parser = argparse.ArgumentParser(description='Train CNN for MNIST')
     parser.add_argument('--save_model_dir', help='Path to save exported model. Model will be exported only if provided')
