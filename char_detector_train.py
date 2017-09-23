@@ -46,12 +46,12 @@ def parse_function(example_proto):
 
 
 def weight_variable(shape):
-    initial = tf.truncated_normal(shape=shape, stddev=0.5)
+    initial = tf.truncated_normal(shape=shape, stddev=0.1)
     return tf.Variable(initial, name='weight_var')
 
 
 def bias_variable(shape):
-    initial = tf.constant(name='biases', value=0.0, shape=shape)
+    initial = tf.constant(name='biases', value=0.1, shape=shape)
     return tf.Variable(initial, name='bias_var')
 
 
@@ -72,6 +72,8 @@ y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
 with tf.name_scope('reshape'):
     # with padding, the image size is 40x32
     x_image = tf.pad(tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images'), [[0, 0], [0, 0], [1, 1], [0, 0]], constant_values=255)
+    mean_image = tf.reduce_mean(x_image, axis=0)
+    x_image = x_image - mean_image
 
 with tf.name_scope('conv1'):
     W_conv1 = weight_variable([3, 3, 1, 32])
@@ -105,13 +107,10 @@ with tf.name_scope('readout'):
     y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2), b_fc2, name='y_conv')
 
 
-tf.summary.histogram('readout_weights', W_fc2)
-tf.summary.histogram('fc1_weights', W_fc1)
-
 softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
 cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
 global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32)
-rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
+rate = tf.train.exponential_decay(1e-5, global_step, decay_rate=0.99, decay_steps=100)
 
 training_step = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy, global_step=global_step)
 
@@ -120,17 +119,17 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 tf.summary.scalar(name='accuracy', tensor=accuracy)
 tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
-
-train_dataset = TFRecordDataset('/tmp/fonts/out/train-00000-of-00001').map(get_feature).take(1000).repeat(5).batch(batch_size=args.batch_size)
-#val_dataset = TFRecordDataset('/tmp/fonts/out/val-00000-of-00001').map(get_feature).batch(batch_size=args.batch_size)
+train_dataset = TFRecordDataset('/tmp/fonts/out/train-00000-of-00001').map(get_feature).repeat(5).batch(batch_size=args.batch_size)
+val_dataset = TFRecordDataset('/tmp/fonts/out/validation-00000-of-00001').map(get_feature).batch(batch_size=args.batch_size)
 
 train_iterator = train_dataset.make_one_shot_iterator()
-next_batch = train_iterator.get_next()
+train_next_batch = train_iterator.get_next()
 
-im_summary = tf.summary.image(name='image', tensor=tf.reshape(x_image[:5], [-1, 40, 32, 1]), max_outputs=5)
+val_iterator = val_dataset.make_one_shot_iterator()
+val_next_batch = val_iterator.get_next()
 
 summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=tf.get_default_graph())
-#summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=tf.get_default_graph())
+summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=tf.get_default_graph())
 
 
 def export_saved_model(export_dir, session, as_text):
@@ -157,7 +156,6 @@ saver = tf.train.Saver()
 
 CHECKPOINT_FILE_NAME = 'checkpoint'
 
-# val_images_count = len(val_dataset['image/encoded'])
 with tf.Session() as sess:
     latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
     if latest_checkpoint:
@@ -166,15 +164,16 @@ with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
     #val_iterator = val_dataset.make_one_shot_iterator()
-    images, labels = sess.run(next_batch)
     for i in range(args.num_training_steps):
+        images, labels = sess.run(train_next_batch)
+
         if i % args.checkpoint_every == 0:
             train_accuracy = accuracy.eval(feed_dict={
                 x: images, y_: labels, keep_prob: 1.0
             })
             global_step_index = sess.run(global_step,
                                          feed_dict={x: images, y_: labels,
-                                                    keep_prob: 0.5})
+                                                    keep_prob: 1.0})
             if args.checkpoint_dir:
                 saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
             print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
@@ -183,15 +182,14 @@ with tf.Session() as sess:
                                          feed_dict={x: images, y_: labels,
                                                     keep_prob: 0.5})
 
-        # print(np.argmax(y_orig, axis=1))
-        # print(np.argmax(y_comp, axis=1))
+        # print(y_orig)
+        # print(y_comp)
         #
-        print(cross_entropy_val)
+        # print(cross_entropy_val)
 
         summary_writer_train.add_summary(summaries, step_id)
-        #validation_images = val_dataset[val_indices]['image/encoded']
-        #validation_labels = val_dataset[val_indices]['image/class/label']
-
+        # validation_images, validation_labels = sess.run(val_next_batch)
+        #
         # summaries, _ = sess.run([tf.summary.merge_all(), training_step],
         #                         feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
         # summary_writer_val.add_summary(summaries, step_id)
