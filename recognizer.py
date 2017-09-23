@@ -21,4 +21,4 @@ class Recognizer(object):
         self.sess.__exit__(exc_type, exc_val, exec_tb=exc_tb)
 
     def predict(self, image):
-        return self.sess.run(self.y, feed_dict={self.x: image.reshape(-1, 784)})
+        return self.sess.run(self.y, feed_dict={self.x: image})
