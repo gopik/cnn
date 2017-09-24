@@ -70,9 +70,9 @@ warp_specs = [
 ]
 
 translate_matrices = []
-for i in range(-5, 6, 2):
-    for j in range(-5, 6, 2):
-        translate_matrices.append(np.float32(np.array([1, 0, i, 0, 1, j]).reshape(2, 3)))
+for vert in range(-2, 3):
+    for horiz in range(-2, 3):
+        translate_matrices.append(np.float32(np.array([1, 0, vert, 0, 1, horiz]).reshape(2, 3)))
 
 rotation_deg = [deg for deg in range(-10, 11, 2)]
 
@@ -80,17 +80,17 @@ base_images_dir = '/tmp/fonts/arial_35'
 
 files_list = []
 
-np.random.seed(0)
+np.random.seed(100)
 
 TRAIN = 0.6
 VAL = 0.8
 TEST = 1.0
 
-train_dir = '/tmp/fonts/train'
-val_dir = '/tmp/fonts/val'
-test_dir = '/tmp/fonts/test'
+train_dir = '/tmp/fonts/small_tx/train'
+val_dir = '/tmp/fonts/small_tx/val'
+test_dir = '/tmp/fonts/small_tx/test'
 
-labels_file_path = '/tmp/fonts/labels.txt'
+labels_file_path = '/tmp/fonts/small_tx/labels.txt'
 
 
 def ensure_dir(dir_path):
@@ -107,12 +107,15 @@ def get_random_dir():
     return test_dir
 
 
+count = 0
 def save_image(label, filename, image):
     outdir = os.path.join(get_random_dir(), label)
     ensure_dir(outdir)
     path = os.path.join(outdir, filename)
     cv2.imwrite(path, image)
-
+    global count
+    count += 1
+    print(count)
 
 labels = set({})
 
@@ -131,20 +134,20 @@ def main(unused_argv):
         save_image(name, filename, orig)
 
         for i in range(len(translate_matrices)):
+            img_tx = translate_image(orig, translate_matrices[i])
+            img_tx = cv2.resize(img_tx, dsize=(orig.shape[1], orig.shape[0]))
             for j in range(len(rotation_deg)):
+                img_r = rotate_image(img_tx, rotation_deg[j])
+                img_r = cv2.resize(img_r, dsize=(orig.shape[1], orig.shape[0]))
                 for k in range(len(warp_specs)):
-                    img = translate_image(orig, translate_matrices[i])
-                    img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
-                    img = rotate_image(img, rotation_deg[j])
-                    img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
-                    img = warp_perspective(img, get_warp_matrix(img, warp_specs[k]))
-                    img = cv2.resize(img, dsize=(orig.shape[1], orig.shape[0]))
+                    img_w = warp_perspective(img_r, get_warp_matrix(img_r, warp_specs[k]))
+                    img_w = cv2.resize(img_w, dsize=(orig.shape[1], orig.shape[0]))
 
                     filename = "%s_%d_%d_%d.jpeg" % (name, i, j, k)
-                    save_image(label, filename, img)
+                    save_image(label, filename, img_w)
 
     labels_file = open(labels_file_path, 'w')
-    for key in labels:
+    for key in sorted(labels):
         labels_file.write(key)
         labels_file.write('\n')
 

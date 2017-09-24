@@ -1,6 +1,6 @@
 import argparse
 import os.path
-import numpy as np
+
 import tensorflow as tf
 from tensorflow.contrib.data.python.ops.dataset_ops import TFRecordDataset
 
@@ -75,9 +75,9 @@ with default_graph.as_default():
 dataset_graph = tf.Graph()
 
 with dataset_graph.as_default():
-    train_dataset = TFRecordDataset('/tmp/fonts/out/train-00000-of-00001').map(get_feature).repeat(5).batch(
+    train_dataset = TFRecordDataset('/tmp/fonts/small_tx/out/train-00000-of-00001').map(get_feature).repeat().batch(
         batch_size=args.batch_size)
-    val_dataset = TFRecordDataset('/tmp/fonts/out/validation-00000-of-00001').map(get_feature).batch(
+    val_dataset = TFRecordDataset('/tmp/fonts/small_tx/out/validation-00000-of-00001').map(get_feature).repeat().batch(
         batch_size=args.batch_size)
 
     train_iterator = train_dataset.make_one_shot_iterator()
@@ -85,7 +85,7 @@ with dataset_graph.as_default():
 
     val_iterator = val_dataset.make_one_shot_iterator()
     val_next_batch = val_iterator.get_next()
-    mean_dataset = TFRecordDataset('/tmp/fonts/out/train-00000-of-00001').map(
+    mean_dataset = TFRecordDataset('/tmp/fonts/small_tx/out/train-00000-of-00001').map(
         get_feature).make_one_shot_iterator().get_next()
 
 with tf.Session(graph=dataset_graph) as sess:
@@ -145,10 +145,10 @@ with default_graph.as_default():
 
     softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
-    global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32)
-    rate = tf.train.exponential_decay(1e-5, global_step, decay_rate=0.99, decay_steps=100)
+    global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
+    rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
 
-    training_step = tf.train.AdamOptimizer(1e-5).minimize(cross_entropy, global_step=global_step)
+    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, global_step=global_step)
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -192,8 +192,6 @@ with tf.Session(graph=dataset_graph) as dataset_session:
         else:
             sess.run(tf.global_variables_initializer())
 
-        validation_images, validation_labels = dataset_session.run(val_next_batch)
-
         for i in range(args.num_training_steps):
             images, labels = dataset_session.run(train_next_batch)
 
@@ -220,6 +218,7 @@ with tf.Session(graph=dataset_graph) as dataset_session:
 
             summary_writer_train.add_summary(summaries, step_id)
 
+            validation_images, validation_labels = dataset_session.run(val_next_batch)
             summaries = sess.run(tf.summary.merge_all(),
                                  feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
             summary_writer_val.add_summary(summaries, step_id)
