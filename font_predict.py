@@ -23,6 +23,5 @@ def main():
             print("%s %s" % (f, classes[indices]))
 
 
-
 if __name__ == '__main__':
     main()
