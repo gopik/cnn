@@ -12,8 +12,15 @@ parser.add_argument('--checkpoint_dir',
 parser.add_argument('--checkpoint_every', type=int, help='Num iterations to checkpoint after', default=100)
 parser.add_argument('--batch_size', type=int, default=50)
 parser.add_argument('--logdir', default='/tmp/cnn/logs')
+parser.add_argument('--dropout_keep_ratio', type=float, default=0.5)
+parser.add_argument('--train_dataset', default='/tmp/fonts/small_tx/out/train-00000-of-00001')
+parser.add_argument('--validation_dataset', default='/tmp/fonts/small_tx/out/validation-00000-of-00001')
+
 
 args = parser.parse_args()
+
+default_graph = tf.Graph()
+dataset_graph = tf.Graph()
 
 
 def get_feature(example_proto):
@@ -63,7 +70,6 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
-default_graph = tf.Graph()
 
 with default_graph.as_default():
     x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
@@ -72,21 +78,17 @@ with default_graph.as_default():
 # For tf.variable_scope vs tf.name_scope,
 #  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
 
-dataset_graph = tf.Graph()
 
 with dataset_graph.as_default():
-    train_dataset = TFRecordDataset('/tmp/fonts/small_tx/out/train-00000-of-00001').map(get_feature).repeat().batch(
-        batch_size=args.batch_size)
-    val_dataset = TFRecordDataset('/tmp/fonts/small_tx/out/validation-00000-of-00001').map(get_feature).repeat().batch(
-        batch_size=args.batch_size)
+    train_dataset = TFRecordDataset(args.train_dataset).map(get_feature).repeat().batch(batch_size=args.batch_size)
+    val_dataset = TFRecordDataset(args.validation_dataset).map(get_feature).repeat().batch(batch_size=args.batch_size)
 
     train_iterator = train_dataset.make_one_shot_iterator()
     train_next_batch = train_iterator.get_next()
 
     val_iterator = val_dataset.make_one_shot_iterator()
     val_next_batch = val_iterator.get_next()
-    mean_dataset = TFRecordDataset('/tmp/fonts/small_tx/out/train-00000-of-00001').map(
-        get_feature).make_one_shot_iterator().get_next()
+    mean_dataset = TFRecordDataset(args.train_dataset).map(get_feature).make_one_shot_iterator().get_next()
 
 with tf.Session(graph=dataset_graph) as sess:
     count = 0
@@ -121,17 +123,17 @@ with default_graph.as_default():
         h_pool1 = max_pool_2x2(h_conv1)
 
     with tf.name_scope('conv2'):
-        W_conv2 = weight_variable([3, 3, 32, 64])
-        b_conv2 = bias_variable([64])
+        W_conv2 = weight_variable([3, 3, 32, 32])
+        b_conv2 = bias_variable([32])
         h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
     with tf.name_scope('pool2'):
         h_pool2 = max_pool_2x2(h_conv2)
 
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([10 * 8 * 64, 1024])
+        W_fc1 = weight_variable([10 * 8 * 32, 1024])
         b_fc1 = bias_variable([1024])
-        h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 64])
+        h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 32])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
     with tf.name_scope('dropout'):
@@ -148,12 +150,28 @@ with default_graph.as_default():
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
     rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
 
-    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy, global_step=global_step)
+    optimizer = tf.train.AdamOptimizer(1e-4)
+    gradients = optimizer.compute_gradients(cross_entropy)
+    training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
+
+    w_conv1_perm = tf.concat([tf.transpose(W_conv1, perm=[3, 0, 1, 2]), tf.zeros([4, 3, 3, 1])], axis=0)
+    w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(w_conv1_perm, [6, 6, 3, 3, 1]), axis=1), axis=2)
+    w_conv1_r1 = tf.stack([tf.concat(tf.unstack(w_conv1_r1), axis=0)])
+
+    tf.summary.image(name='W_conv1_weights', tensor=w_conv1_r1, max_outputs=6)
+
+    conv_grad = None
+    for (g, v) in gradients:
+        if v == W_conv1:
+            conv_grad = g
+            break
+
+    tf.summary.histogram(name='conv_image_grad', values=conv_grad)
 
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
@@ -209,7 +227,7 @@ with tf.Session(graph=dataset_graph) as dataset_session:
             summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
                 [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
                 feed_dict={x: images, y_: labels,
-                           keep_prob: 0.5})
+                           keep_prob: args.dropout_keep_ratio})
 
             # print(y_orig)
             # print(y_comp)
