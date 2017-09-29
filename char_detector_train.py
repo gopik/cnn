@@ -1,8 +1,11 @@
 import argparse
+import functools
 import os.path
 
+import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.data.python.ops.dataset_ops import TFRecordDataset
+
+from tf_image_reader import TFImageReader
 
 parser = argparse.ArgumentParser(description='Train CNN for MNIST')
 parser.add_argument('--save_model_dir', help='Path to save exported model. Model will be exported only if provided')
@@ -20,36 +23,26 @@ parser.add_argument('--validation_dataset', default='/tmp/fonts/small_tx/out/val
 args = parser.parse_args()
 
 default_graph = tf.Graph()
-dataset_graph = tf.Graph()
+
+train_dataset = TFImageReader(args.train_dataset, args.batch_size, unlimited=True)
+val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=True)
+mean_dataset = TFImageReader(args.train_dataset, 1)
 
 
-def get_feature(example_proto):
-    parsed_feature = parse_function(example_proto)
+def compute_mean_image():
+    def reduce_mean(acc, data):
+        cur_mean, count = acc
+        val, _ = data
+        return cur_mean * count/(count + 1) + val/(count + 1), count + 1
 
-    with tf.name_scope('decode_jpeg'):
-        decoded_image = tf.image.decode_jpeg(parsed_feature['image/encoded'])
-        image = tf.reshape(tf.image.rgb_to_grayscale(decoded_image, "rgb_to_grayscale"),
-                           shape=[40 * 30])
-        label = tf.one_hot(parsed_feature['image/class/label'], depth=37)
-    return image, label
+    if os.path.exists('/tmp/mean_image.npy'):
+        return np.load('/tmp/mean_image.npy')
 
-
-def parse_function(example_proto):
-    features = {
-        'image/height': tf.FixedLenFeature([], tf.int64),
-        'image/width': tf.FixedLenFeature([], tf.int64),
-        'image/colorspace': tf.FixedLenFeature([], dtype=tf.string, default_value=''),
-        'image/channels': tf.FixedLenFeature([], tf.int64),
-        'image/class/label': tf.FixedLenFeature([], tf.int64),
-        'image/class/text': tf.FixedLenFeature([], dtype=tf.string, default_value=''),
-        'image/format': tf.FixedLenFeature([], dtype=tf.string, default_value=''),
-        'image/filename': tf.FixedLenFeature([], dtype=tf.string, default_value=''),
-        'image/encoded': tf.FixedLenFeature([], dtype=tf.string, default_value='')
-    }
-
-    parsed_feature = tf.parse_single_example(example_proto, features=features)
-
-    return parsed_feature
+    print('Save mean not found, computing ...')
+    mean, _ = functools.reduce(reduce_mean, mean_dataset, (0.0, 0))
+    np.save('/tmp/mean_image.npy', mean)
+    print('Saving computed mean image')
+    return mean
 
 
 def weight_variable(shape):
@@ -70,45 +63,19 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
+image_mean = compute_mean_image()
+
+
+# For tf.variable_scope vs tf.name_scope,
+#  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
 
 with default_graph.as_default():
     x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
     y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
 
-# For tf.variable_scope vs tf.name_scope,
-#  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
-
-
-with dataset_graph.as_default():
-    train_dataset = TFRecordDataset(args.train_dataset).map(get_feature).repeat().batch(batch_size=args.batch_size)
-    val_dataset = TFRecordDataset(args.validation_dataset).map(get_feature).repeat().batch(batch_size=args.batch_size)
-
-    train_iterator = train_dataset.make_one_shot_iterator()
-    train_next_batch = train_iterator.get_next()
-
-    val_iterator = val_dataset.make_one_shot_iterator()
-    val_next_batch = val_iterator.get_next()
-    mean_dataset = TFRecordDataset(args.train_dataset).map(get_feature).make_one_shot_iterator().get_next()
-
-with tf.Session(graph=dataset_graph) as sess:
-    count = 0
-    image_sum = None
-    try:
-        image, label = sess.run(mean_dataset)
-        if image_sum is None:
-            image_sum = image
-            count = 1
-        else:
-            image_sum += image
-            count += 1
-    except():
-        pass
-
-with default_graph.as_default():
-    mean_image = tf.reshape(tf.constant(image_sum * 1.0 / count, dtype=tf.float32), [-1, 40, 30, 1])
+    mean_image = tf.reshape(tf.constant(image_mean, dtype=tf.float32), [-1, 40, 30, 1])
 
     with tf.name_scope('reshape'):
-        print(x.get_shape())
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
         x_image_sub_mean = x_input - mean_image
@@ -202,44 +169,37 @@ with default_graph.as_default():
 
 CHECKPOINT_FILE_NAME = 'checkpoint'
 
-with tf.Session(graph=dataset_graph) as dataset_session:
-    with tf.Session(graph=default_graph) as sess:
-        latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
-        if latest_checkpoint:
-            saver.restore(sess, latest_checkpoint)
-        else:
-            sess.run(tf.global_variables_initializer())
+with tf.Session(graph=default_graph) as sess:
+    latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
+    if latest_checkpoint:
+        saver.restore(sess, latest_checkpoint)
+    else:
+        sess.run(tf.global_variables_initializer())
 
-        for i in range(args.num_training_steps):
-            images, labels = dataset_session.run(train_next_batch)
+    validation_dataset_iterator = iter(val_dataset)
+    for i, (images, labels) in zip(range(args.num_training_steps), train_dataset):
+        if i % args.checkpoint_every == 0:
+            train_accuracy = accuracy.eval(feed_dict={
+                x: images, y_: labels, keep_prob: 1.0
+            })
+            global_step_index = sess.run(global_step,
+                                         feed_dict={x: images, y_: labels,
+                                                    keep_prob: 1.0})
+            if args.checkpoint_dir:
+                saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
+            print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
 
-            if i % args.checkpoint_every == 0:
-                train_accuracy = accuracy.eval(feed_dict={
-                    x: images, y_: labels, keep_prob: 1.0
-                })
-                global_step_index = sess.run(global_step,
-                                             feed_dict={x: images, y_: labels,
-                                                        keep_prob: 1.0})
-                if args.checkpoint_dir:
-                    saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
-                print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
+        summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
+            [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
+            feed_dict={x: images, y_: labels,
+                       keep_prob: args.dropout_keep_ratio})
 
-            summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
-                [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
-                feed_dict={x: images, y_: labels,
-                           keep_prob: args.dropout_keep_ratio})
+        summary_writer_train.add_summary(summaries, step_id)
 
-            # print(y_orig)
-            # print(y_comp)
-            #
-            # print(cross_entropy_val)
+        validation_images, validation_labels = next(validation_dataset_iterator)
+        summaries = sess.run(tf.summary.merge_all(),
+                             feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
+        summary_writer_val.add_summary(summaries, step_id)
 
-            summary_writer_train.add_summary(summaries, step_id)
-
-            validation_images, validation_labels = dataset_session.run(val_next_batch)
-            summaries = sess.run(tf.summary.merge_all(),
-                                 feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
-            summary_writer_val.add_summary(summaries, step_id)
-
-        if args.save_model_dir:
-            export_saved_model(args.save_model_dir, session=sess, as_text=True)
+    if args.save_model_dir:
+        export_saved_model(args.save_model_dir, session=sess, as_text=True)
