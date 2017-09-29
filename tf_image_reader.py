@@ -4,7 +4,7 @@ from tensorflow.contrib.data import TFRecordDataset
 
 class TFImageReader(object):
     """An iterator for TF record based images"""
-    
+
     def __init__(self, dataset, batch_size, unlimited=False):
         """
         Create a new TFRecord based image reader. Tensorflow ops are added to a new graph.
