@@ -3,7 +3,16 @@ from tensorflow.contrib.data import TFRecordDataset
 
 
 class TFImageReader(object):
+    """An iterator for TF record based images"""
+    
     def __init__(self, dataset, batch_size, unlimited=False):
+        """
+        Create a new TFRecord based image reader. Tensorflow ops are added to a new graph.
+
+        :param dataset: Dataset file name (RecordIO containing tf.Example protos)
+        :param batch_size: Number of images to return in one read.
+        :param unlimited: If true, the iteration will never end.
+        """
         self.graph = tf.Graph()
         repeat_count = -1
         if not unlimited:
