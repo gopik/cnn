@@ -4,10 +4,8 @@ import os.path
 import numpy as np
 import tensorflow as tf
 
-from char_detector_train import mean_dataset
 
-
-def compute_mean_image():
+def compute_mean_image(mean_dataset):
     def reduce_mean(acc, data):
         cur_mean, count = acc
         val, _ = data
