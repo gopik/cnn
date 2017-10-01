@@ -18,11 +18,10 @@ chars = [None] + list(string.digits) + list(string.ascii_uppercase)
 def predict(r, path):
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     img = img[np.newaxis, :, :, np.newaxis]
-    prediction = r.predict(img)
-    return chars[np.argmax(prediction)]
+    return chars[np.argmax(r.predict(img))]
 
 
-def main(unused_args):
+def main():
     rec = glob.glob('/Users/gopik/Downloads/container/outputs/**/recognized*', recursive=True)
     df = pd.DataFrame({'file_path': rec})
     df = df.assign(cat=lambda d: d['file_path'].apply(lambda fp: os.path.basename(fp).split('_')[1]))
@@ -34,8 +33,8 @@ def main(unused_args):
     df_acc['total'] = df_acc[False] + df_acc[True]
     df_acc['percent'] = df_acc[True] / df_acc['total']
     df_acc.to_csv(os.path.join(args.save_model_dir, 'acc.csv'))
-    print(np.mean(df_acc['total'] * df_acc['percent']))
+    print(np.sum(df_acc[True])/np.sum(df_acc['total']))
 
 
 if __name__ == '__main__':
-    main(None)
+    main()

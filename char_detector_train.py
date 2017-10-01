@@ -44,10 +44,12 @@ with default_graph.as_default():
         x_image_sub_mean = x_input - mean_image
         x_image = tf.pad(x_image_sub_mean, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
+    conv_keep_prob = tf.placeholder_with_default(1.0, name='conv_keep_prob', shape=())
+
     with tf.name_scope('conv1'):
         W_conv1 = weight_variable([3, 3, 1, 16])
         b_conv1 = bias_variable([16])
-        h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
+        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob)
 
     with tf.name_scope('pool1'):
         h_pool1 = max_pool_2x2(h_conv1)
@@ -55,7 +57,7 @@ with default_graph.as_default():
     with tf.name_scope('conv2'):
         W_conv2 = weight_variable([3, 3, 16, 32])
         b_conv2 = bias_variable([32])
-        h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), conv_keep_prob)
 
     with tf.name_scope('pool2'):
         h_pool2 = max_pool_2x2(h_conv2)
@@ -145,8 +147,7 @@ with tf.Session(graph=default_graph) as sess:
                 x: images, y_: labels, keep_prob: 1.0
             })
             global_step_index = sess.run(global_step,
-                                         feed_dict={x: images, y_: labels,
-                                                    keep_prob: 1.0})
+                                         feed_dict={x: images, y_: labels})
             if args.checkpoint_dir:
                 saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
             print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
@@ -154,13 +155,13 @@ with tf.Session(graph=default_graph) as sess:
         summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
             [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
             feed_dict={x: images, y_: labels,
-                       keep_prob: args.dropout_keep_ratio})
+                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.6})
 
         summary_writer_train.add_summary(summaries, step_id)
 
         validation_images, validation_labels = next(validation_dataset_iterator)
         summaries = sess.run(tf.summary.merge_all(),
-                             feed_dict={x: validation_images, y_: validation_labels, keep_prob: 1.0})
+                             feed_dict={x: validation_images, y_: validation_labels})
         summary_writer_val.add_summary(summaries, step_id)
 
     if args.save_model_dir:

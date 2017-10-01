@@ -108,6 +108,8 @@ def get_random_dir():
 
 
 count = 0
+
+
 def save_image(label, filename, image):
     outdir = os.path.join(get_random_dir(), label)
     ensure_dir(outdir)
@@ -116,6 +118,7 @@ def save_image(label, filename, image):
     global count
     count += 1
     print(count)
+
 
 labels = set({})
 
