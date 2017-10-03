@@ -148,6 +148,9 @@ def main(unused_argv):
 
                     filename = "%s_%d_%d_%d.jpeg" % (name, i, j, k)
                     save_image(label, filename, img_w)
+                    filename = "%s_%d_%d_%d_th.jpeg" % (name, i, j, k)
+                    image_th = cv2.adaptiveThreshold(img_w, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,7,4)
+                    save_image(label, filename, image_th)
 
     labels_file = open(labels_file_path, 'w')
     for key in sorted(labels):

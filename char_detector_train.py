@@ -37,27 +37,27 @@ with default_graph.as_default():
     x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
     y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
 
-    #mean_image = tf.reshape(tf.constant(image_mean, dtype=tf.float32), [-1, 40, 30, 1], name='reshaped_mean_image')
+    mean_image = tf.reshape(tf.constant(image_mean, dtype=tf.float32), [-1, 40, 30, 1], name='reshaped_mean_image')
 
     with tf.name_scope('reshape'):
         # invert input image
         x_input = 255 - tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        #x_image_sub_mean = x_input - mean_image
-        x_image = tf.pad(x_input, [[0, 0], [0, 0], [1, 1], [0, 0]])
+        x_image_sub_mean = x_input - mean_image
+        x_image = tf.pad(x_image_sub_mean, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
     conv_keep_prob = tf.placeholder_with_default(1.0, name='conv_keep_prob', shape=())
 
     with tf.name_scope('conv1'):
-        W_conv1 = weight_variable([3, 3, 1, 36])
-        b_conv1 = bias_variable([36])
+        W_conv1 = weight_variable([3, 3, 1, 16])
+        b_conv1 = bias_variable([16])
         h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob)
 
     with tf.name_scope('pool1'):
         h_pool1 = max_pool_2x2(h_conv1)
 
     with tf.name_scope('conv2'):
-        W_conv2 = weight_variable([3, 3, 36, 32])
+        W_conv2 = weight_variable([3, 3, 16, 32])
         b_conv2 = bias_variable([32])
         h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), conv_keep_prob)
 
@@ -65,8 +65,8 @@ with default_graph.as_default():
         h_pool2 = max_pool_2x2(h_conv2)
 
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([10 * 8 * 32, 1024])
-        b_fc1 = bias_variable([1024])
+        W_fc1 = weight_variable([10 * 8 * 32, 512])
+        b_fc1 = bias_variable([512])
         h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 32])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
@@ -75,7 +75,7 @@ with default_graph.as_default():
         h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
     with tf.name_scope('readout'):
-        W_fc2 = weight_variable([1024, 37])
+        W_fc2 = weight_variable([512, 37])
         b_fc2 = bias_variable([37])
         y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2), b_fc2, name='y_conv')
 
@@ -84,7 +84,7 @@ with default_graph.as_default():
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
     rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
 
-    optimizer = tf.train.AdamOptimizer(1e-5)
+    optimizer = tf.train.AdamOptimizer(1e-4)
     gradients = optimizer.compute_gradients(cross_entropy)
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
 
@@ -93,7 +93,7 @@ with default_graph.as_default():
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
-    w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(W_conv1, [6, 6, 3, 3, 1]), axis=1), axis=2)
+    w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(W_conv1, [4, 4, 3, 3, 1]), axis=1), axis=2)
     w_conv1_r1 = tf.stack([tf.concat(tf.unstack(w_conv1_r1), axis=0)])
 
     tf.summary.image(name='W_conv1_weights', tensor=w_conv1_r1, max_outputs=6)

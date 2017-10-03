@@ -5,7 +5,9 @@ class Recognizer(object):
     def __init__(self, model_dir):
         self.model_dir = model_dir
         self.sess = tf.Session(graph=tf.Graph()).__enter__()
+
         meta_graph_def = tf.saved_model.loader.load(self.sess, tags=['serve'], export_dir=self.model_dir)
+        tf.summary.FileWriter('/tmp/model_eval', self.sess.graph).close()
         signature_def = meta_graph_def.signature_def[
             tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
         self.x = tf.saved_model.utils.get_tensor_from_tensor_info(
