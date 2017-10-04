@@ -98,10 +98,10 @@ with default_graph.as_default():
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
     with tf.control_dependencies([training_step]):
         norm_clipping_step = [
-            W_conv1.assign(tf.clip_by_norm(W_conv1, 4.0, axes=[1, 2])),
-            W_conv2.assign(tf.clip_by_norm(W_conv2, 4.0, axes=[1, 2])),
-            W_fc1.assign(tf.clip_by_norm(W_fc1, 4.0, axes=[1])),
-            W_fc2.assign(tf.clip_by_norm(W_fc2, 4.0, axes=[1]))
+            W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
+            W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
+            W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
+            W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
         ]
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
