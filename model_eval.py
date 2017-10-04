@@ -30,6 +30,7 @@ def main():
     df_prediction = df.assign(prediction=lambda d: d['file_path'].apply(lambda path: predict(r, path)))
     df_prediction['acc'] = df_prediction['cat'] == df_prediction['prediction']
     df_acc = df_prediction.groupby(['cat', 'acc']).count().unstack()['prediction'].fillna(0)
+    print(df_acc)
     df_acc['total'] = df_acc[False] + df_acc[True]
     df_acc['percent'] = df_acc[True] / df_acc['total']
     df_acc.to_csv(os.path.join(args.save_model_dir, 'acc.csv'))

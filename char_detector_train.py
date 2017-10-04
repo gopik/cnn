@@ -32,7 +32,6 @@ image_mean = 255 - compute_mean_image(mean_dataset)
 
 # For tf.variable_scope vs tf.name_scope,
 #  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
-
 with default_graph.as_default():
     x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
     y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
@@ -52,9 +51,7 @@ with default_graph.as_default():
     with tf.name_scope('conv1'):
         W_conv1 = weight_variable([3, 3, 1, 36])
         b_conv1 = bias_variable([36])
-
-        W_conv1_norm = tf.clip_by_norm(W_conv1, max_norm, axes=[1, 2])
-        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1_norm) + b_conv1), conv_keep_prob)
+        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob)
 
     with tf.name_scope('pool1'):
         h_pool1 = max_pool_2x2(h_conv1)
@@ -62,9 +59,7 @@ with default_graph.as_default():
     with tf.name_scope('conv2'):
         W_conv2 = weight_variable([3, 3, 36, 32])
         b_conv2 = bias_variable([32])
-
-        W_conv2_norm = tf.clip_by_norm(W_conv2, max_norm, axes=[1, 2])
-        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2_norm) + b_conv2), conv_keep_prob)
+        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), conv_keep_prob)
 
     with tf.name_scope('pool2'):
         h_pool2 = max_pool_2x2(h_conv2)
@@ -81,9 +76,7 @@ with default_graph.as_default():
         W_fc1 = weight_variable([10 * 8 * 32, 1024])
         b_fc1 = bias_variable([1024])
         h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 32])
-
-        W_fc1_norm = tf.clip_by_norm(W_fc1, max_norm, axes=[1])
-        h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1_norm) + b_fc1)
+        h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
     with tf.name_scope('dropout'):
         keep_prob = tf.placeholder_with_default(1.0, name='keep_prob', shape=())
@@ -93,8 +86,7 @@ with default_graph.as_default():
         W_fc2 = weight_variable([1024, 37])
         b_fc2 = bias_variable([37])
 
-        W_fc2_norm = tf.clip_by_norm(W_fc2, max_norm, axes=[1])
-        y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2_norm), b_fc2, name='y_conv')
+        y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2), b_fc2, name='y_conv')
 
     softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
@@ -104,6 +96,13 @@ with default_graph.as_default():
     optimizer = tf.train.AdamOptimizer(1e-4)
     gradients = optimizer.compute_gradients(cross_entropy)
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
+    with tf.control_dependencies([training_step]):
+        norm_clipping_step = [
+            W_conv1.assign(tf.clip_by_norm(W_conv1, 4.0, axes=[1, 2])),
+            W_conv2.assign(tf.clip_by_norm(W_conv2, 4.0, axes=[1, 2])),
+            W_fc1.assign(tf.clip_by_norm(W_fc1, 4.0, axes=[1])),
+            W_fc2.assign(tf.clip_by_norm(W_fc2, 4.0, axes=[1]))
+        ]
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -171,8 +170,8 @@ with tf.Session(graph=default_graph) as sess:
                 saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
             print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
 
-        summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
-            [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
+        summaries, _, step_id, y_orig, y_comp, cross_entropy_val, _ = sess.run(
+            [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy, norm_clipping_step],
             feed_dict={x: images, y_: labels,
                        keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.5})
 
