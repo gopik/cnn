@@ -81,7 +81,7 @@ warp_specs = [
 
 translate_matrices = []
 for vert in range(-2, 3):
-    for horiz in range(-2, 3):
+    for horiz in range(0, 5):
         translate_matrices.append(np.float32(np.array([1, 0, vert, 0, 1, horiz]).reshape(2, 3)))
 
 rotation_deg = [deg for deg in range(-10, 11, 2)]
