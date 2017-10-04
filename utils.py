@@ -9,7 +9,7 @@ def compute_mean_image(mean_dataset):
     def reduce_mean(acc, data):
         cur_mean, count = acc
         val, _ = data
-        return cur_mean * count/(count + 1) + val/(count + 1), count + 1
+        return cur_mean * count / (count + 1) + val / (count + 1), count + 1
 
     if os.path.exists('/tmp/mean_image.npy'):
         return np.load('/tmp/mean_image.npy')

@@ -47,37 +47,54 @@ with default_graph.as_default():
         x_image = tf.pad(x_image_sub_mean, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
     conv_keep_prob = tf.placeholder_with_default(1.0, name='conv_keep_prob', shape=())
+    max_norm = tf.constant(4.0)
 
     with tf.name_scope('conv1'):
-        W_conv1 = weight_variable([3, 3, 1, 16])
-        b_conv1 = bias_variable([16])
-        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob)
+        W_conv1 = weight_variable([3, 3, 1, 36])
+        b_conv1 = bias_variable([36])
+
+        W_conv1_norm = tf.clip_by_norm(W_conv1, max_norm, axes=[1, 2])
+        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1_norm) + b_conv1), conv_keep_prob)
 
     with tf.name_scope('pool1'):
         h_pool1 = max_pool_2x2(h_conv1)
 
     with tf.name_scope('conv2'):
-        W_conv2 = weight_variable([3, 3, 16, 32])
+        W_conv2 = weight_variable([3, 3, 36, 32])
         b_conv2 = bias_variable([32])
-        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), conv_keep_prob)
+
+        W_conv2_norm = tf.clip_by_norm(W_conv2, max_norm, axes=[1, 2])
+        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2_norm) + b_conv2), conv_keep_prob)
 
     with tf.name_scope('pool2'):
         h_pool2 = max_pool_2x2(h_conv2)
 
+    # with tf.name_scope('conv3'):
+    #     W_conv3 = weight_variable([3, 3, 32, 64])
+    #     b_conv3 = bias_variable([64])
+    #     h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), conv_keep_prob)
+    #
+    # with tf.name_scope('pool3'):
+    #     h_pool3 = max_pool_2x2(h_conv3)
+
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([10 * 8 * 32, 512])
-        b_fc1 = bias_variable([512])
+        W_fc1 = weight_variable([10 * 8 * 32, 1024])
+        b_fc1 = bias_variable([1024])
         h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 32])
-        h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
+
+        W_fc1_norm = tf.clip_by_norm(W_fc1, max_norm, axes=[1])
+        h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1_norm) + b_fc1)
 
     with tf.name_scope('dropout'):
         keep_prob = tf.placeholder_with_default(1.0, name='keep_prob', shape=())
         h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
     with tf.name_scope('readout'):
-        W_fc2 = weight_variable([512, 37])
+        W_fc2 = weight_variable([1024, 37])
         b_fc2 = bias_variable([37])
-        y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2), b_fc2, name='y_conv')
+
+        W_fc2_norm = tf.clip_by_norm(W_fc2, max_norm, axes=[1])
+        y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2_norm), b_fc2, name='y_conv')
 
     softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
@@ -93,7 +110,7 @@ with default_graph.as_default():
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
-    w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(W_conv1, [4, 4, 3, 3, 1]), axis=1), axis=2)
+    w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(W_conv1, [6, 6, 3, 3, 1]), axis=1), axis=2)
     w_conv1_r1 = tf.stack([tf.concat(tf.unstack(w_conv1_r1), axis=0)])
 
     tf.summary.image(name='W_conv1_weights', tensor=w_conv1_r1, max_outputs=6)
@@ -157,7 +174,7 @@ with tf.Session(graph=default_graph) as sess:
         summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
             [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
             feed_dict={x: images, y_: labels,
-                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.6})
+                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.5})
 
         summary_writer_train.add_summary(summaries, step_id)
 

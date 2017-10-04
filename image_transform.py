@@ -59,6 +59,12 @@ right_shrink = np.float32([[0, 0], [1, 0.1], [1, 0.9], [0, 1]])
 
 rl_diag_shrink = np.float32([[0, 0], [0.9, 0.1], [1, 1], [0.1, 0.9]])
 lr_diag_shrink = np.float32([[0.1, 0.1], [1, 0], [0.9, 0.9], [0, 1]])
+unzoom1 = np.float32([[0.1, 0.1], [0.9, 0.1], [0.9, 0.9], [0.1, 0.9]])
+unzoom2 = np.float32([[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]])
+
+zoom1 = np.float32([[-0.1, -0.1], [1.1, -0.1], [1.1, 1.1], [-0.1, 1.1]])
+zoom2 = np.float32([[-0.2, -0.2], [1.2, -0.2], [1.2, 1.2], [-0.2, 1.2]])
+
 
 warp_specs = [
     top_shrink,
@@ -67,6 +73,10 @@ warp_specs = [
     right_shrink,
     rl_diag_shrink,
     lr_diag_shrink,
+    unzoom1,
+    unzoom2,
+    zoom1,
+    zoom2
 ]
 
 translate_matrices = []
