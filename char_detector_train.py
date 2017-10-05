@@ -27,8 +27,7 @@ train_dataset = TFImageReader(args.train_dataset, args.batch_size, unlimited=Tru
 val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=True)
 mean_dataset = TFImageReader(args.train_dataset, 1)
 
-# invert mean image
-image_mean = 255 - compute_mean_image(mean_dataset)
+image_mean = compute_mean_image(mean_dataset)
 
 # For tf.variable_scope vs tf.name_scope,
 #  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
@@ -39,8 +38,7 @@ with default_graph.as_default():
     mean_image = tf.reshape(tf.constant(image_mean, dtype=tf.float32), [-1, 40, 30, 1], name='reshaped_mean_image')
 
     with tf.name_scope('reshape'):
-        # invert input image
-        x_input = 255 - tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
+        x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
         x_image_sub_mean = x_input - mean_image
         x_image = tf.pad(x_image_sub_mean, [[0, 0], [0, 0], [1, 1], [0, 0]])
@@ -93,7 +91,7 @@ with default_graph.as_default():
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
     rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
 
-    optimizer = tf.train.AdamOptimizer(1e-4)
+    optimizer = tf.train.AdamOptimizer(1e-5)
     gradients = optimizer.compute_gradients(cross_entropy)
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
     with tf.control_dependencies([training_step]):
@@ -173,7 +171,7 @@ with tf.Session(graph=default_graph) as sess:
         summaries, _, step_id, y_orig, y_comp, cross_entropy_val, _ = sess.run(
             [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy, norm_clipping_step],
             feed_dict={x: images, y_: labels,
-                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.5})
+                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.8})
 
         summary_writer_train.add_summary(summaries, step_id)
 
