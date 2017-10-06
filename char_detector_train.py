@@ -1,6 +1,7 @@
 import argparse
 import os.path
-
+import cv2
+import numpy as np
 import tensorflow as tf
 
 from tf_image_reader import TFImageReader
@@ -28,6 +29,7 @@ val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=
 mean_dataset = TFImageReader(args.train_dataset, 1)
 
 image_mean = compute_mean_image(mean_dataset)
+blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)[:, :, np.newaxis, np.newaxis]
 
 # For tf.variable_scope vs tf.name_scope,
 #  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
@@ -40,7 +42,8 @@ with default_graph.as_default():
     with tf.name_scope('reshape'):
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        x_image_sub_mean = x_input - mean_image
+        x_image_sub_mean = conv2d(x_input - mean_image, tf.constant(blur_filter, dtype=tf.float32))
+
         x_image = tf.pad(x_image_sub_mean, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
     conv_keep_prob = tf.placeholder_with_default(1.0, name='conv_keep_prob', shape=())

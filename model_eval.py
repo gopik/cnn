@@ -14,10 +14,13 @@ args = parser.parse_args()
 
 chars = [None] + list(string.digits) + list(string.ascii_uppercase)
 
+blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)
 
 def predict(r, path):
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    img = cv2.GaussianBlur(img, (5, 5), 1, 1)
+    img = cv2.medianBlur(img, 3)
+    img = cv2.GaussianBlur(img, (7, 7), 1, 1)
+    #img = cv2.filter2D(img, 8, blur_filter)
     img = img[np.newaxis, :, :, np.newaxis]
     return chars[np.argmax(r.predict(img))]
 
