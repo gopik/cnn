@@ -62,18 +62,18 @@ with default_graph.as_default():
     with tf.name_scope('pool2'):
         h_pool2 = max_pool_2x2(h_conv2)
 
-    # with tf.name_scope('conv3'):
-    #     W_conv3 = weight_variable([3, 3, 32, 64])
-    #     b_conv3 = bias_variable([64])
-    #     h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), conv_keep_prob)
-    #
-    # with tf.name_scope('pool3'):
-    #     h_pool3 = max_pool_2x2(h_conv3)
+    with tf.name_scope('conv3'):
+        W_conv3 = weight_variable([3, 3, 32, 32])
+        b_conv3 = bias_variable([32])
+        h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), conv_keep_prob)
+
+    with tf.name_scope('pool3'):
+        h_pool3 = max_pool_2x2(h_conv3)
 
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([10 * 8 * 32, 1024])
+        W_fc1 = weight_variable([5 * 4 * 32, 1024])
         b_fc1 = bias_variable([1024])
-        h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 32])
+        h_pool3_flat = tf.reshape(h_pool3, [-1, 5 * 4 * 32])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
     with tf.name_scope('dropout'):
@@ -96,6 +96,7 @@ with default_graph.as_default():
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
     with tf.control_dependencies([training_step]):
         norm_clipping_step = [
+            W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
             W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
             W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
             W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),

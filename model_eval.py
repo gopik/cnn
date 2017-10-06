@@ -17,6 +17,7 @@ chars = [None] + list(string.digits) + list(string.ascii_uppercase)
 
 def predict(r, path):
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    img = cv2.GaussianBlur(img, (5, 5), 1, 1)
     img = img[np.newaxis, :, :, np.newaxis]
     return chars[np.argmax(r.predict(img))]
 
