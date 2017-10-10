@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3e1fcfaa60eecf79717e5982a75ce78b087ae38a6abd4b729b23cf9a8f729caf"
+            "sha256": "23b5ffb1cf24b803eeeef5f1103c3863bc4e187e370e1989906a9670b3bccf18"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -29,6 +29,13 @@
         ]
     },
     "default": {
+        "augmentor": {
+            "hashes": [
+                "sha256:c22d9672692b0c4d1b84f0c20a40e90cb10b6369ed8021213c859d54a4f485d8",
+                "sha256:c9040fd157830a009f5297fb50e07f97e6d7103d90136d9146f68540e737c0b2"
+            ],
+            "version": "==0.1.6"
+        },
         "bleach": {
             "hashes": [
                 "sha256:e67f46adcec78dbc3c04462f3aba3213a673d5652eba2609ed1ef15492a44b8d",
@@ -50,11 +57,23 @@
             ],
             "version": "==0.2.3"
         },
+        "future": {
+            "hashes": [
+                "sha256:e39ced1ab767b5936646cedba8bcce582398233d6a627067d4c6a454c90cfedb"
+            ],
+            "version": "==0.16.0"
+        },
         "html5lib": {
             "hashes": [
                 "sha256:2612a191a8d5842bfa057e41ba50bbb9dcb722419d2408c78cff4758d0754868"
             ],
             "version": "==0.9999999"
+        },
+        "imutils": {
+            "hashes": [
+                "sha256:0d6ecdbf754924c4f65022b453b88470dc95d4ff943d75c39b004cbe8b63d0c7"
+            ],
+            "version": "==0.4.3"
         },
         "ipykernel": {
             "hashes": [
@@ -69,6 +88,7 @@
                 "sha256:fcc6d46f08c3c4de7b15ae1c426e15be1b7932bcda9d83ce1a4304e8c1129df3",
                 "sha256:51c158a6c8b899898d1c91c6b51a34110196815cc905f9be0fa5878e19355608"
             ],
+            "markers": "python_version >= '3.3'",
             "version": "==6.2.1"
         },
         "ipython-genutils": {
@@ -517,6 +537,13 @@
                 "sha256:1fb8e494cd46c674d86fac5885a3ff87b0e283937a47d74eb3c02a48c9e89ad0"
             ],
             "version": "==4.5.2"
+        },
+        "tqdm": {
+            "hashes": [
+                "sha256:c5fa81c1ea8258ec3e42ffd3fa664c9bd3f47407603171563f5dd532f06907ba",
+                "sha256:a6fd7479f3fb0ba653290e61d97917b2621c51cc8e31dc19963b5002904abaa1"
+            ],
+            "version": "==4.19.2"
         },
         "traitlets": {
             "hashes": [
