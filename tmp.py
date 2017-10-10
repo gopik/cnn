@@ -5,6 +5,16 @@ import numpy as np
 import os
 
 
+def recursive_find_files(root_dir, pattern):
+    """Returns a list of files matching the pattern starting from root_dir"""
+    files_list = []
+    matcher = re.compile(pattern)
+    for dirname, subdirs, files in os.walk(root_dir):
+        files_list += filter(lambda f: matcher.match(f),
+                             map(lambda filename: os.path.join(dirname, filename), files))
+    return files_list
+
+
 class Frame(object):
     def __init__(self, dirname):
         self.dirname = dirname
