@@ -1,8 +1,9 @@
+import os
 import os.path
-import glob
+import re
+
 import cv2
 import numpy as np
-import os
 
 
 def recursive_find_files(root_dir, pattern):
@@ -11,7 +12,7 @@ def recursive_find_files(root_dir, pattern):
     matcher = re.compile(pattern)
     for dirname, subdirs, files in os.walk(root_dir):
         files_list += filter(lambda f: matcher.match(f),
-                             map(lambda filename: os.path.join(dirname, filename), files))
+                             map(lambda filename: os.path.join(os.path.abspath(dirname), filename), files))
     return files_list
 
 
@@ -19,7 +20,7 @@ class Frame(object):
     def __init__(self, dirname):
         self.dirname = dirname
         self.orig = os.path.join(dirname, 'orginal.jpg')
-        self.rec = glob.glob(os.path.join(dirname, 'chars/**/rec*.jpg'), recursive=True)
+        self.rec = recursive_find_files(dirname, '.*chars/**/rec*.jpg')
         self.original = cv2.imread(self.orig, cv2.IMREAD_GRAYSCALE)
 
     def get_orig_crop(self):
@@ -44,7 +45,8 @@ class Frame(object):
             f = os.path.basename(self.dirname) + '_' + os.path.basename(key).split('.')[0] + ".jpeg"
             cv2.imwrite(os.path.join(target_dir, f), img)
 
-    def get_padding(self, h, w, target_h, target_w):
+    @staticmethod
+    def get_padding(h, w, target_h, target_w):
         times = np.ceil(h / target_h)
         h_pad = int(target_h * times - h)
         w_pad = int(target_w * times - w)
