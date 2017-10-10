@@ -18,6 +18,8 @@ scipy = "==0.19.1"
 tensorflow = "*"
 "tensorflow-tensorboard" = "==0.1.6"
 werkzeug = "==0.12.2"
+"opencv-python" = "*"
+pandas = "*"
 
 
 [requires]
