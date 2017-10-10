@@ -20,6 +20,7 @@ tensorflow = "*"
 werkzeug = "==0.12.2"
 "opencv-python" = "*"
 pandas = "*"
+jupyter = "*"
 
 
 [requires]
