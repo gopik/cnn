@@ -5,20 +5,9 @@ import cv2
 import imutils
 import string
 import os.path
-from PIL import Image, ImageFont, ImageDraw
 import glob
 
 all_chars_list = [c for c in string.ascii_uppercase] + [c for c in string.digits]
-
-
-def gen_all_char_images(image_dir):
-    f = ImageFont.truetype('Arial.ttf', 35)
-    for c in all_chars_list:
-        image = Image.new(color=255, mode='L', size=(30, 40))
-        draw = ImageDraw.Draw(image)
-        draw.text((0, 0), c, font=f)
-        file_path = os.path.join(image_dir, c + '.png')
-        image.save(file_path, 'png')
 
 
 def rotate_image(img, deg):
