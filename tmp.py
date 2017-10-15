@@ -4,6 +4,7 @@ import re
 
 import cv2
 import numpy as np
+import glob
 
 
 def recursive_find_files(root_dir, pattern):
@@ -20,7 +21,7 @@ class Frame(object):
     def __init__(self, dirname):
         self.dirname = dirname
         self.orig = os.path.join(dirname, 'orginal.jpg')
-        self.rec = recursive_find_files(dirname, '.*chars/**/rec*.jpg')
+        self.rec = glob.glob(os.path.join(dirname, 'chars/**/rec*.jpg'), recursive=True)
         self.original = cv2.imread(self.orig, cv2.IMREAD_GRAYSCALE)
 
     def get_orig_crop(self):
@@ -31,8 +32,10 @@ class Frame(object):
             orig_crop = self.original[y:y + h, x:x + w]
             crop = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
             img = cv2.resize(crop, (w, h))
+            _, img = cv2.threshold(img, 100, cv2.THRESH_BINARY)
             img_pad = np.pad(img, self.get_padding(h, w, 40, 30), mode='constant', constant_values=255)
-            img_pad_resize = cv2.resize(img_pad, (30, 40))
+            img_pad_resize = cv2.resize(img_pad, (30, 40), interpolation=cv2.INTER_AREA)
+
             ex[file] = (cat, orig_crop, img_pad_resize)
         return ex
 

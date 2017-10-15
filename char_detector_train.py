@@ -76,7 +76,7 @@ with default_graph.as_default():
     with tf.name_scope('fc1'):
         W_fc1 = weight_variable([10 * 8 * 32, 1024])
         b_fc1 = bias_variable([1024])
-        h_pool3_flat = tf.reshape(h_pool2, [-1, 19 * 8 * 32])
+        h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8* 32])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
     with tf.name_scope('dropout'):
@@ -99,7 +99,7 @@ with default_graph.as_default():
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
     with tf.control_dependencies([training_step]):
         norm_clipping_step = [
-            W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
+#            W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
             W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
             W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
             W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
@@ -172,8 +172,8 @@ with tf.Session(graph=default_graph) as sess:
                 saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
             print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
 
-        summaries, _, step_id, y_orig, y_comp, cross_entropy_val, _ = sess.run(
-            [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy, norm_clipping_step],
+        summaries, _, step_id, y_orig, y_comp, cross_entropy_val    = sess.run(
+            [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
             feed_dict={x: images, y_: labels,
                        keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.8})
 
