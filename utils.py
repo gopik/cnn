@@ -37,3 +37,19 @@ def conv2d(x, W):
 
 def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+
+def get_padding(h, w, target_h, target_w):
+    times_h = np.ceil(h / target_h)
+    times_w = np.ceil(w / target_w)
+
+    times = max(times_h, times_w)
+    h_pad = int(target_h * times - h)
+    w_pad = int(target_w * times - w)
+
+    if w_pad < 0:
+        print(h, w, target_h, target_w)
+    h_pad_top, _ = divmod(h_pad, 2)
+    w_pad_left, _ = divmod(w_pad, 2)
+
+    return (h_pad_top, h_pad - h_pad_top), (w_pad_left, w_pad - w_pad_left)

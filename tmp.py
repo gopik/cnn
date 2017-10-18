@@ -5,6 +5,7 @@ import re
 import cv2
 import numpy as np
 import glob
+import utils
 
 
 def recursive_find_files(root_dir, pattern):
@@ -32,8 +33,8 @@ class Frame(object):
             orig_crop = self.original[y:y + h, x:x + w]
             crop = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
             img = cv2.resize(crop, (w, h))
-            _, img = cv2.threshold(img, 100, cv2.THRESH_BINARY)
-            img_pad = np.pad(img, self.get_padding(h, w, 40, 30), mode='constant', constant_values=255)
+            _, img = cv2.threshold(orig_crop, 36, 255, cv2.THRESH_BINARY)
+            img_pad = np.pad(img, utils.get_padding(h, w, 40, 30), mode='constant', constant_values=255)
             img_pad_resize = cv2.resize(img_pad, (30, 40), interpolation=cv2.INTER_AREA)
 
             ex[file] = (cat, orig_crop, img_pad_resize)
@@ -47,14 +48,3 @@ class Frame(object):
 
             f = os.path.basename(self.dirname) + '_' + os.path.basename(key).split('.')[0] + ".jpeg"
             cv2.imwrite(os.path.join(target_dir, f), img)
-
-    @staticmethod
-    def get_padding(h, w, target_h, target_w):
-        times = np.ceil(h / target_h)
-        h_pad = int(target_h * times - h)
-        w_pad = int(target_w * times - w)
-
-        h_pad_top, _ = divmod(h_pad, 2)
-        w_pad_left, _ = divmod(w_pad, 2)
-
-        return (h_pad_top, h_pad - h_pad_top), (w_pad_left, w_pad - w_pad_left)
