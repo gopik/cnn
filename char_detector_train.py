@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from tf_image_reader import TFImageReader
-from utils import compute_mean_image, weight_variable, bias_variable, conv2d, max_pool_2x2
+from utils import compute_mean_image, weight_variable, bias_variable, conv2d, max_pool_2x2, salt_and_pepper
 
 parser = argparse.ArgumentParser(description='Train CNN for MNIST')
 parser.add_argument('--save_model_dir', help='Path to save exported model. Model will be exported only if provided')
@@ -28,7 +28,7 @@ train_dataset = TFImageReader(args.train_dataset, args.batch_size, unlimited=Tru
 val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=True)
 mean_dataset = TFImageReader(args.train_dataset, 1)
 
-image_mean = compute_mean_image(mean_dataset)
+#image_mean = compute_mean_image(mean_dataset)
 blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)[:, :, np.newaxis, np.newaxis]
 
 # For tf.variable_scope vs tf.name_scope,
@@ -37,12 +37,16 @@ with default_graph.as_default():
     x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
     y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
 
-    mean_image = tf.reshape(tf.constant(image_mean, dtype=tf.float32), [-1, 40, 30, 1], name='reshaped_mean_image')
+    #mean_image = tf.reshape(tf.constant(image_mean, dtype=tf.float32), [-1, 40, 30, 1], name='reshaped_mean_image')
 
+    is_training = tf.placeholder_with_default(False, shape=None, name='is_training')
     with tf.name_scope('reshape'):
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        x_image_sub_mean = conv2d(x_input - mean_image, tf.constant(blur_filter, dtype=tf.float32))
+        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.01), shape=[1, 40, 30, 1], name='salt_pepper_noise', dtype=tf.float32)
+
+        x_noise_input = tf.cond(is_training, lambda: x_input * noise, lambda: x_input)
+        x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
 
         x_image = tf.pad(x_image_sub_mean, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
@@ -94,7 +98,7 @@ with default_graph.as_default():
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
     rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
 
-    optimizer = tf.train.AdamOptimizer(1e-5)
+    optimizer = tf.train.AdamOptimizer(1e-7)
     gradients = optimizer.compute_gradients(cross_entropy)
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
     with tf.control_dependencies([training_step]):
@@ -172,16 +176,16 @@ with tf.Session(graph=default_graph) as sess:
                 saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
             print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
 
-        summaries, _, step_id, y_orig, y_comp, cross_entropy_val    = sess.run(
+        summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
             [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
             feed_dict={x: images, y_: labels,
-                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.8})
+                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.8, is_training: True})
 
         summary_writer_train.add_summary(summaries, step_id)
 
         validation_images, validation_labels = next(validation_dataset_iterator)
         summaries = sess.run(tf.summary.merge_all(),
-                             feed_dict={x: validation_images, y_: validation_labels})
+                             feed_dict={x: 255 - validation_images, y_: validation_labels})
         summary_writer_val.add_summary(summaries, step_id)
 
     if args.save_model_dir:

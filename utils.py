@@ -53,3 +53,9 @@ def get_padding(h, w, target_h, target_w):
     w_pad_left, _ = divmod(w_pad, 2)
 
     return (h_pad_top, h_pad - h_pad_top), (w_pad_left, w_pad - w_pad_left)
+
+
+def salt_and_pepper(shape, zero_prob=0.008):
+    size = np.prod(shape)
+    one_prob = 1 - zero_prob
+    return np.random.choice([0, 1], size, True, [zero_prob, one_prob]).reshape(shape)
