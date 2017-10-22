@@ -11,6 +11,8 @@ To save a model for later serving:
 
 python3 mnist_cnn_scratch.py --num_training_steps=1000 --checkpoint_every=100 --checkpoint_dir=/tmp/cnn/checkpoints --batch_size=100 --save_model_dir=\<save model dir>
 
+inv_* models are trained using inverted images (white font on black background)
+
 ## Prediction
 python3 mnist_cnn_predict.py --save_model_dir=\<save model dir>
 
@@ -21,8 +23,8 @@ Converting images to tfrecord format - https://github.com/tensorflow/models/blob
 https://agray3.github.io/2016/11/29/Demystifying-Data-Input-to-TensorFlow-for-Deep-Learning.html
 
 ## Things to try (to reduce overfitting):
-2. Use dropout for conv layers
-3. Use inverted images for training (and skip mean image subtraction) [Didn't work]
-4. Use thresholded images for training.
-5. Add zoomed images to training.
-6. Crop images at font boundary for training and inference (using histograms).
+ -[X] Use dropout for conv layers
+ -[X] Use inverted images for training (and skip mean image subtraction)
+ -[X] Use thresholded images for training (not required, since we do blur during training).
+ -[X] Add zoomed images to training [Using keras image augmentation]
+ -[ ] Crop images at font boundary for training and inference (using histograms).
