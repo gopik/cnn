@@ -1,11 +1,12 @@
 import argparse
 import os.path
+
 import cv2
 import numpy as np
 import tensorflow as tf
 
 from tf_image_reader import TFImageReader
-from utils import compute_mean_image, weight_variable, bias_variable, conv2d, max_pool_2x2, salt_and_pepper
+from utils import weight_variable, bias_variable, conv2d, max_pool_2x2, salt_and_pepper
 
 parser = argparse.ArgumentParser(description='Train CNN for MNIST')
 parser.add_argument('--save_model_dir', help='Path to save exported model. Model will be exported only if provided')
@@ -28,7 +29,6 @@ train_dataset = TFImageReader(args.train_dataset, args.batch_size, unlimited=Tru
 val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=True)
 mean_dataset = TFImageReader(args.train_dataset, 1)
 
-#image_mean = compute_mean_image(mean_dataset)
 blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)[:, :, np.newaxis, np.newaxis]
 
 # For tf.variable_scope vs tf.name_scope,
@@ -37,13 +37,12 @@ with default_graph.as_default():
     x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
     y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
 
-    #mean_image = tf.reshape(tf.constant(image_mean, dtype=tf.float32), [-1, 40, 30, 1], name='reshaped_mean_image')
-
     is_training = tf.placeholder_with_default(False, shape=None, name='is_training')
     with tf.name_scope('reshape'):
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.009), shape=[1, 40, 30, 1], name='salt_pepper_noise', dtype=tf.float32)
+        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.009), shape=[1, 40, 30, 1], name='salt_pepper_noise',
+                            dtype=tf.float32)
 
         x_noise_input = tf.cond(is_training, lambda: x_input * noise, lambda: x_input)
         x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
@@ -58,6 +57,7 @@ with default_graph.as_default():
         b_conv1 = bias_variable([36])
         h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob, noise_shape=[1, 1, 36])
         tf.summary.histogram("conv1_out", tf.reshape(h_conv1, [-1]))
+
     with tf.name_scope('pool1'):
         h_pool1 = max_pool_2x2(h_conv1)
 
@@ -107,7 +107,7 @@ with default_graph.as_default():
     if args.norm_clipping:
         with tf.control_dependencies([training_step]):
             norm_clipping_step = [
-    #            W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
+                W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
                 W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
                 W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
                 W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
@@ -192,8 +192,5 @@ with tf.Session(graph=default_graph) as sess:
 
         validation_images, validation_labels = next(validation_dataset_iterator)
         summaries, accuracy_val = sess.run([tf.summary.merge_all(), accuracy],
-                             feed_dict={x: 255 - validation_images, y_: validation_labels})
+                                           feed_dict={x: 255 - validation_images, y_: validation_labels})
         summary_writer_val.add_summary(summaries, step_id)
-        if accuracy_val >= 0.95:
-            break
-
