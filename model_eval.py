@@ -6,6 +6,7 @@ from recognizer import Recognizer
 import cv2
 import string
 import argparse
+import utils
 
 parser = argparse.ArgumentParser(
     description='Evaluate model accuracy on test data and saves per cat accuracy in model dir')
@@ -17,22 +18,30 @@ chars = [None] + list(string.digits) + list(string.ascii_uppercase)
 blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)
 
 def predict(r, path):
+    # filename, _ = os.path.basename(path).split('.')
+    # _, _, x, y, w, h = filename.split('_')
+    # x, y, w, h = int(x), int(y), int(w), int(h)
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    img = cv2.medianBlur(img, 3)
-    img = cv2.GaussianBlur(img, (7, 7), 1, 1)
-    #img = cv2.filter2D(img, 8, blur_filter)
+    # img_resize = cv2.resize(img, (w, h), cv2.INTER_AREA)
+    # img_pad = utils.get_padding(h, w, 40, 30)
+    # padded_img = np.pad(img_resize, img_pad, mode='constant', constant_values=255)
+    # img = cv2.resize(padded_img, (30, 40), cv2.INTER_AREA)
     img = img[np.newaxis, :, :, np.newaxis]
-    return chars[np.argmax(r.predict(img))]
+    prediction = r.predict(255 - img)
+    result = (chars[np.argmax(prediction[:, :11])], chars[11 + np.argmax(prediction[:, 11:])])
+    return result
 
 
 def main():
-    rec = glob.glob('/Users/gopik/Downloads/container/outputs/**/recognized*', recursive=True)
+    rec = glob.glob('data/lot1/outputs/**/recognized_*', recursive=True)
     df = pd.DataFrame({'file_path': rec})
     df = df.assign(cat=lambda d: d['file_path'].apply(lambda fp: os.path.basename(fp).split('_')[1]))
     r = Recognizer(args.save_model_dir)
 
     df_prediction = df.assign(prediction=lambda d: d['file_path'].apply(lambda path: predict(r, path)))
-    df_prediction['acc'] = df_prediction['cat'] == df_prediction['prediction']
+    df_prediction['acc'] = df_prediction.apply(lambda r:
+                                               r['cat'] in r['prediction'], axis=1)
+    #print(df_prediction)
     df_acc = df_prediction.groupby(['cat', 'acc']).count().unstack()['prediction'].fillna(0)
     print(df_acc)
     df_acc['total'] = df_acc[False] + df_acc[True]

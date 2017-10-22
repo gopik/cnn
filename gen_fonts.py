@@ -21,7 +21,11 @@ font_paths = [
     'freefont/FreeSerif.ttf',
     'dejavu/DejaVuSans.ttf',
     'dejavu/DejaVuSerif.ttf',
-    'dejavu/DejaVuSansMono.ttf'
+    'dejavu/DejaVuSansMono.ttf',
+    'ttf-ancient-scripts/Symbola605.ttf',
+    'ttf-indic-fonts-core/MuktiNarrow.ttf',
+    'liberation/LiberationSansNarrow-Regular.ttf',
+    'msttcorefonts/Andale_Mono.ttf'
 ]
 
 

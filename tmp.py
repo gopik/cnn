@@ -32,10 +32,9 @@ class Frame(object):
             x, y, w, h = map(int, [x, y, w, h])
             orig_crop = self.original[y:y + h, x:x + w]
             crop = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
-            img = cv2.resize(crop, (w, h))
-            _, img = cv2.threshold(orig_crop, 36, 255, cv2.THRESH_BINARY)
+            _, img = cv2.threshold(orig_crop, 36, 255, cv2.THRESH_BINARY_INVo)
             img_pad = np.pad(img, utils.get_padding(h, w, 40, 30), mode='constant', constant_values=255)
-            img_pad_resize = cv2.resize(img_pad, (30, 40), interpolation=cv2.INTER_AREA)
+            img_pad_resize = cv2.resize(img_pad, (30, 40), interpolation=cv2.INTER_CUBIC)
 
             ex[file] = (cat, orig_crop, img_pad_resize)
         return ex

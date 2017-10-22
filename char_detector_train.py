@@ -18,7 +18,7 @@ parser.add_argument('--logdir', default='/tmp/cnn/logs')
 parser.add_argument('--dropout_keep_ratio', type=float, default=0.5)
 parser.add_argument('--train_dataset', default='/tmp/fonts/small_tx/out/train-00000-of-00001')
 parser.add_argument('--validation_dataset', default='/tmp/fonts/small_tx/out/validation-00000-of-00001')
-
+parser.add_argument('--norm_clipping', default=False, type=bool)
 
 args = parser.parse_args()
 
@@ -43,7 +43,7 @@ with default_graph.as_default():
     with tf.name_scope('reshape'):
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.01), shape=[1, 40, 30, 1], name='salt_pepper_noise', dtype=tf.float32)
+        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.009), shape=[1, 40, 30, 1], name='salt_pepper_noise', dtype=tf.float32)
 
         x_noise_input = tf.cond(is_training, lambda: x_input * noise, lambda: x_input)
         x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
@@ -56,32 +56,35 @@ with default_graph.as_default():
     with tf.name_scope('conv1'):
         W_conv1 = weight_variable([3, 3, 1, 36])
         b_conv1 = bias_variable([36])
-        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob)
-
+        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob, noise_shape=[1, 1, 36])
+        tf.summary.histogram("conv1_out", tf.reshape(h_conv1, [-1]))
     with tf.name_scope('pool1'):
         h_pool1 = max_pool_2x2(h_conv1)
 
     with tf.name_scope('conv2'):
         W_conv2 = weight_variable([3, 3, 36, 32])
         b_conv2 = bias_variable([32])
-        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), conv_keep_prob)
+        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), conv_keep_prob, noise_shape=[1, 1, 32])
+        tf.summary.histogram("conv2_out", tf.reshape(h_conv2, [-1]))
 
     with tf.name_scope('pool2'):
         h_pool2 = max_pool_2x2(h_conv2)
 
-    # with tf.name_scope('conv3'):
-    #     W_conv3 = weight_variable([3, 3, 32, 32])
-    #     b_conv3 = bias_variable([32])
-    #     h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), conv_keep_prob)
-    #
-    # with tf.name_scope('pool3'):
-    #     h_pool3 = max_pool_2x2(h_conv3)
+    with tf.name_scope('conv3'):
+        W_conv3 = weight_variable([3, 3, 32, 64])
+        b_conv3 = bias_variable([64])
+        h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), 1.0, noise_shape=[1, 1, 64])
+        tf.summary.histogram("conv3_out", tf.reshape(h_conv3, [-1]))
+
+    with tf.name_scope('pool3'):
+        h_pool3 = max_pool_2x2(h_conv3)
 
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([10 * 8 * 32, 1024])
+        W_fc1 = weight_variable([5 * 4 * 64, 1024])
         b_fc1 = bias_variable([1024])
-        h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8* 32])
+        h_pool3_flat = tf.reshape(h_pool3, [-1, 5 * 4 * 64])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
+        tf.summary.histogram("fc1", tf.reshape(h_fc1, [-1]))
 
     with tf.name_scope('dropout'):
         keep_prob = tf.placeholder_with_default(1.0, name='keep_prob', shape=())
@@ -96,38 +99,39 @@ with default_graph.as_default():
     softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
-    rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.99, decay_steps=100)
-
-    optimizer = tf.train.AdamOptimizer(1e-7)
+    rate = tf.train.exponential_decay(1e-6, global_step, decay_rate=0.95, decay_steps=1000)
+    tf.summary.scalar(name='learning_rate', tensor=rate)
+    optimizer = tf.train.AdamOptimizer(1e-6)
     gradients = optimizer.compute_gradients(cross_entropy)
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
-    with tf.control_dependencies([training_step]):
-        norm_clipping_step = [
-#            W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
-            W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
-            W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
-            W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
-            W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
-        ]
+    if args.norm_clipping:
+        with tf.control_dependencies([training_step]):
+            norm_clipping_step = [
+    #            W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
+                W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
+                W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
+                W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
+                W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
+            ]
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
-    w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(W_conv1, [6, 6, 3, 3, 1]), axis=1), axis=2)
-    w_conv1_r1 = tf.stack([tf.concat(tf.unstack(w_conv1_r1), axis=0)])
-
-    tf.summary.image(name='W_conv1_weights', tensor=w_conv1_r1, max_outputs=6)
-
-    conv_grad = None
-    for (g, v) in gradients:
-        if v == W_conv1:
-            conv_grad = g
-            break
-
-    tf.summary.histogram(name='conv_image_grad', values=conv_grad)
-
+    # w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(W_conv1, [6, 6, 3, 3, 1]), axis=1), axis=2)
+    # w_conv1_r1 = tf.stack([tf.concat(tf.unstack(w_conv1_r1), axis=0)])
+    #
+    # tf.summary.image(name='W_conv1_weights', tensor=w_conv1_r1, max_outputs=6)
+    #
+    # conv_grad = None
+    # for (g, v) in gradients:
+    #     if v == W_conv1:
+    #         conv_grad = g
+    #         break
+    #
+    # tf.summary.histogram(name='conv_image_grad', values=conv_grad)
+    #
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
 
@@ -165,6 +169,9 @@ with tf.Session(graph=default_graph) as sess:
         sess.run(tf.global_variables_initializer())
 
     validation_dataset_iterator = iter(val_dataset)
+    if args.save_model_dir:
+        export_saved_model(args.save_model_dir, session=sess, as_text=True)
+
     for i, (images, labels) in zip(range(args.num_training_steps), train_dataset):
         if i % args.checkpoint_every == 0:
             train_accuracy = accuracy.eval(feed_dict={
@@ -184,9 +191,9 @@ with tf.Session(graph=default_graph) as sess:
         summary_writer_train.add_summary(summaries, step_id)
 
         validation_images, validation_labels = next(validation_dataset_iterator)
-        summaries = sess.run(tf.summary.merge_all(),
+        summaries, accuracy_val = sess.run([tf.summary.merge_all(), accuracy],
                              feed_dict={x: 255 - validation_images, y_: validation_labels})
         summary_writer_val.add_summary(summaries, step_id)
+        if accuracy_val >= 0.95:
+            break
 
-    if args.save_model_dir:
-        export_saved_model(args.save_model_dir, session=sess, as_text=True)
