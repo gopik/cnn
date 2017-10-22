@@ -3,6 +3,9 @@ from PIL import Image, ImageDraw, ImageFont
 import utils
 import numpy as np
 import os.path
+from keras.preprocessing.image import ImageDataGenerator
+import tmp
+import cv2
 
 # TODO: Add flags for file paths and image sizes.
 
@@ -54,9 +57,8 @@ fonts_list = [
     ImageFont.truetype(file, 32*4) for file in map(lambda p: os.path.join(font_path_base, p), font_paths)
 ]
 
-
 # Base directory where font images need to be created.
-base_dir = '/home/gopik/github/cnn/fonts/base'
+base_dir = 'fonts/base'
 for ch in chars:
     target_dir = os.path.join(base_dir, ch)
     if not os.path.exists(target_dir):
@@ -73,3 +75,32 @@ for ch in chars:
         img_padded_pil.save(target_file)
 
 
+def gen_augmented_images():
+    list_font_jpg = tmp.recursive_find_files('fonts/base', '.*jpeg')
+    datagen = ImageDataGenerator(
+        rotation_range=10,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.25,
+        zoom_range=0.25,
+        horizontal_flip=False,
+        fill_mode='nearest')
+
+    for path in list_font_jpg:
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        cat = os.path.basename(os.path.dirname(path))
+        file_basename = os.path.basename(path)
+        x = img[np.newaxis, :, :, np.newaxis]
+        i = 0
+        target_dir = os.path.join('/home/gopik/github/cnn/fonts/train', cat)
+        if not os.path.exists(target_dir):
+            os.mkdir(target_dir)
+        for batch in datagen.flow(x, ['0'], batch_size=1, shuffle=True):
+            aug_img = batch[0][0].reshape(40, 30)
+            i += 1
+            if i > 1000:
+                print('Done generating %s' % cat)
+                break  # otherwise the generator would loop indefinitely
+
+            file_path = os.path.join(target_dir, file_basename + str(i) + '.jpeg')
+            cv2.imwrite(file_path, aug_img)
