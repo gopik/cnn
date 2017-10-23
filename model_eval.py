@@ -22,6 +22,7 @@ def predict(r, path):
     # _, _, x, y, w, h = filename.split('_')
     # x, y, w, h = int(x), int(y), int(w), int(h)
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    img = cv2.medianBlur(img, 3)
     # img_resize = cv2.resize(img, (w, h), cv2.INTER_AREA)
     # img_pad = utils.get_padding(h, w, 40, 30)
     # padded_img = np.pad(img_resize, img_pad, mode='constant', constant_values=255)
@@ -33,7 +34,7 @@ def predict(r, path):
 
 
 def main():
-    rec = glob.glob('data/lot2/outputs/**/recognized_N*', recursive=True)
+    rec = glob.glob('data/lot2/outputs/**/recognized_R*', recursive=True)
     df = pd.DataFrame({'file_path': rec})
     df = df.assign(cat=lambda d: d['file_path'].apply(lambda fp: os.path.basename(fp).split('_')[1]))
     r = Recognizer(args.save_model_dir)

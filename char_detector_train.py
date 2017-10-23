@@ -188,7 +188,7 @@ with tf.Session(graph=default_graph) as sess:
         summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
             [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
             feed_dict={x: images, y_: labels,
-                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.8,
+                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.6,
                        is_training: args.use_salt_pepper_noise})
 
         summary_writer_train.add_summary(summaries, step_id)
