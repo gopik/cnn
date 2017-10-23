@@ -18,7 +18,9 @@ class TFImageReader(object):
         if not unlimited:
             repeat_count = 1
         with self.graph.as_default():
-            self.dataset = TFRecordDataset(dataset).map(self.get_feature).repeat(repeat_count).batch(batch_size)
+            self.dataset = TFRecordDataset(dataset).map(self.get_feature).repeat(repeat_count).shuffle(10000).batch(
+                batch_size)
+
         self.session = tf.Session(graph=self.graph)
 
     def __iter__(self):

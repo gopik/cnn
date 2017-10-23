@@ -33,7 +33,7 @@ def predict(r, path):
 
 
 def main():
-    rec = glob.glob('data/lot1/outputs/**/recognized_*', recursive=True)
+    rec = glob.glob('data/lot2/outputs/**/recognized_N*', recursive=True)
     df = pd.DataFrame({'file_path': rec})
     df = df.assign(cat=lambda d: d['file_path'].apply(lambda fp: os.path.basename(fp).split('_')[1]))
     r = Recognizer(args.save_model_dir)
@@ -41,7 +41,7 @@ def main():
     df_prediction = df.assign(prediction=lambda d: d['file_path'].apply(lambda path: predict(r, path)))
     df_prediction['acc'] = df_prediction.apply(lambda r:
                                                r['cat'] in r['prediction'], axis=1)
-    #print(df_prediction)
+    print(df_prediction)
     df_acc = df_prediction.groupby(['cat', 'acc']).count().unstack()['prediction'].fillna(0)
     print(df_acc)
     df_acc['total'] = df_acc[False] + df_acc[True]

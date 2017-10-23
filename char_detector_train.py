@@ -20,7 +20,9 @@ parser.add_argument('--dropout_keep_ratio', type=float, default=0.5)
 parser.add_argument('--train_dataset', default='/tmp/fonts/small_tx/out/train-00000-of-00001')
 parser.add_argument('--validation_dataset', default='/tmp/fonts/small_tx/out/validation-00000-of-00001')
 parser.add_argument('--norm_clipping', default=False, type=bool)
+parser.add_argument('--use_salt_pepper_noise', default=False, type=bool)
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # Show all logs
 args = parser.parse_args()
 
 default_graph = tf.Graph()
@@ -41,7 +43,7 @@ with default_graph.as_default():
     with tf.name_scope('reshape'):
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.009), shape=[1, 40, 30, 1], name='salt_pepper_noise',
+        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.01), shape=[1, 40, 30, 1], name='salt_pepper_noise',
                             dtype=tf.float32)
 
         x_noise_input = tf.cond(is_training, lambda: x_input * noise, lambda: x_input)
@@ -53,7 +55,7 @@ with default_graph.as_default():
     max_norm = tf.constant(4.0)
 
     with tf.name_scope('conv1'):
-        W_conv1 = weight_variable([3, 3, 1, 36])
+        W_conv1 = weight_variable([5, 5, 1, 36])
         b_conv1 = bias_variable([36])
         h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob, noise_shape=[1, 1, 36])
         tf.summary.histogram("conv1_out", tf.reshape(h_conv1, [-1]))
@@ -84,7 +86,7 @@ with default_graph.as_default():
         b_fc1 = bias_variable([1024])
         h_pool3_flat = tf.reshape(h_pool3, [-1, 5 * 4 * 64])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
-        tf.summary.histogram("fc1", tf.reshape(h_fc1, [-1]))
+        tf.summary.histogram("fc1_out", tf.reshape(h_fc1, [-1]))
 
     with tf.name_scope('dropout'):
         keep_prob = tf.placeholder_with_default(1.0, name='keep_prob', shape=())
@@ -99,9 +101,9 @@ with default_graph.as_default():
     softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
-    rate = tf.train.exponential_decay(1e-6, global_step, decay_rate=0.95, decay_steps=1000)
+    rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.95, decay_steps=1000)
     tf.summary.scalar(name='learning_rate', tensor=rate)
-    optimizer = tf.train.AdamOptimizer(1e-6)
+    optimizer = tf.train.AdamOptimizer(1e-5)
     gradients = optimizer.compute_gradients(cross_entropy)
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
     if args.norm_clipping:
@@ -186,7 +188,8 @@ with tf.Session(graph=default_graph) as sess:
         summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
             [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
             feed_dict={x: images, y_: labels,
-                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.8, is_training: True})
+                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.8,
+                       is_training: args.use_salt_pepper_noise})
 
         summary_writer_train.add_summary(summaries, step_id)
 
