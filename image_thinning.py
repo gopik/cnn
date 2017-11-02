@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def get_p_list(img, i, j):
     p_list = np.zeros(9)
     img_pad = img
@@ -32,34 +35,26 @@ def condition1(p_list):
     if not p_list[0]:
         return False
     boundary_points = boundary(p_list)
-    return boundary_points >= 2 and boundary_points <= 6 and count_pattern(p_list) == 1 and p_list[1] * p_list[3] * \
-                                                                                            p_list[5] == 0 and p_list[
-                                                                                                                   3] * \
-                                                                                                               p_list[
-                                                                                                                   5] * \
-                                                                                                               p_list[
-                                                                                                                   7] == 0
+    return (2 <= boundary_points <= 6
+            and count_pattern(p_list) == 1
+            and p_list[1] * p_list[3] * p_list[5] == 0
+            and p_list[3] * p_list[5] * p_list[7] == 0)
 
 
 def condition2(p_list):
     if not p_list[0]:
         return False
     boundary_points = boundary(p_list)
-    return boundary_points >= 2 and boundary_points <= 6 and count_pattern(p_list) == 1 and p_list[1] * p_list[3] * \
-                                                                                            p_list[7] == 0 and p_list[
-                                                                                                                   1] * \
-                                                                                                               p_list[
-                                                                                                                   5] * \
-                                                                                                               p_list[
-                                                                                                                   7] == 0
+    return (2 <= boundary_points <= 6
+            and count_pattern(p_list) == 1 and p_list[1] * p_list[3] * p_list[7] == 0 and p_list[1] * p_list[5] *
+            p_list[7] == 0)
 
 
 def iteration(img_orig, condition=condition1):
-    img_binary = np.uint8(img_orig > 0)
     img_mask = np.ones(img_orig.shape, dtype=np.uint8)
     for i in range(1, img_orig.shape[0] - 1):
         for j in range(1, img_orig.shape[1] - 1):
-            p_list = get_p_list(img_binary, i, j)
+            p_list = get_p_list(img_orig, i, j)
             if condition(p_list):
                 img_mask[i, j] = 0
 
@@ -80,8 +75,13 @@ def remove_mask(img):
     return img
 
 
-num_pixels_changed = True
-while num_pixels_changed:
-    sum_orig = np.sum(img1)
-    remove_mask(img1)
-    num_pixels_changed = np.sum(img1) < sum_orig
+def thin_image(img):
+    img_copy = np.uint8(img > 0)
+
+    pixels_changed = True
+    while pixels_changed:
+        sum_orig = np.sum(img_copy)
+        remove_mask(img_copy)
+        pixels_changed = np.sum(img_copy) < sum_orig
+
+    return img_copy

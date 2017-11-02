@@ -43,13 +43,13 @@ with default_graph.as_default():
     with tf.name_scope('reshape'):
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.01), shape=[1, 40, 30, 1], name='salt_pepper_noise',
+        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.02), shape=[1, 40, 30, 1], name='salt_pepper_noise',
                             dtype=tf.float32)
 
         x_noise_input = tf.cond(is_training, lambda: x_input * noise, lambda: x_input)
-        x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
+        #x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
 
-        x_image = tf.pad(x_image_sub_mean, [[0, 0], [0, 0], [1, 1], [0, 0]])
+        x_image = tf.pad(x_input, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
     conv_keep_prob = tf.placeholder_with_default(1.0, name='conv_keep_prob', shape=())
     max_norm = tf.constant(4.0)
@@ -75,7 +75,7 @@ with default_graph.as_default():
     with tf.name_scope('conv3'):
         W_conv3 = weight_variable([3, 3, 32, 64])
         b_conv3 = bias_variable([64])
-        h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), 1.0, noise_shape=[1, 1, 64])
+        h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), conv_keep_prob, noise_shape=[1, 1, 64])
         tf.summary.histogram("conv3_out", tf.reshape(h_conv3, [-1]))
 
     with tf.name_scope('pool3'):
@@ -103,7 +103,7 @@ with default_graph.as_default():
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
     rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.95, decay_steps=1000)
     tf.summary.scalar(name='learning_rate', tensor=rate)
-    optimizer = tf.train.AdamOptimizer(1e-5)
+    optimizer = tf.train.AdamOptimizer(1e-4)
     gradients = optimizer.compute_gradients(cross_entropy)
     training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
     if args.norm_clipping:
