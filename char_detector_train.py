@@ -27,14 +27,16 @@ args = parser.parse_args()
 
 default_graph = tf.Graph()
 
-train_dataset = TFImageReader(args.train_dataset, args.batch_size, unlimited=True)
+train_dataset = TFImageReader(args.train_dataset, args.batch_size,
+                              unlimited=True)
 val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=True)
 mean_dataset = TFImageReader(args.train_dataset, 1)
 
 blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)[:, :, np.newaxis, np.newaxis]
 
 # For tf.variable_scope vs tf.name_scope,
-#  see https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
+#  see
+#  https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
 with default_graph.as_default():
     x = tf.placeholder(tf.float32, shape=[None, 1200], name='train_images')
     y_ = tf.placeholder(tf.float32, shape=[None, 37], name='train_labels')
@@ -43,13 +45,20 @@ with default_graph.as_default():
     with tf.name_scope('reshape'):
         x_input = tf.reshape(x, [-1, 40, 30, 1], name='reshaped_images')
 
-        noise = tf.constant(salt_and_pepper((40, 30), zero_prob=0.02), shape=[1, 40, 30, 1], name='salt_pepper_noise',
-                            dtype=tf.float32)
+        noise_pepper = tf.constant(salt_and_pepper((40, 30), zero_prob=0.02),
+                                   shape=[1, 40, 30, 1], name='pepper_noise', dtype=tf.float32)
 
-        x_noise_input = tf.cond(is_training, lambda: x_input * noise, lambda: x_input)
+        noise_salt = 1 - tf.constant(salt_and_pepper((40, 30), zero_prob=0.98),
+                                 shape=[1, 40, 30, 1], name='salt_noise')
+
+        def salt_pepper_noise(data):
+            return 255 - (255 - data * salt_and_pepper((1, 40, 30, 1),
+                                                       zero_prob=0.01)) * salt_and_pepper((1, 40, 30, 1), zero_prob=0.01)
+
+        x_noise_input = tf.cond(is_training, lambda: salt_pepper_noise(x_input), lambda: x_input)
         #x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
 
-        x_image = tf.pad(x_input, [[0, 0], [0, 0], [1, 1], [0, 0]])
+        x_image = tf.pad(x_noise_input, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
     conv_keep_prob = tf.placeholder_with_default(1.0, name='conv_keep_prob', shape=())
     max_norm = tf.constant(4.0)
@@ -57,7 +66,8 @@ with default_graph.as_default():
     with tf.name_scope('conv1'):
         W_conv1 = weight_variable([5, 5, 1, 36])
         b_conv1 = bias_variable([36])
-        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1), conv_keep_prob, noise_shape=[1, 1, 36])
+        h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1),
+                                conv_keep_prob, noise_shape=[1, 1, 36])
         tf.summary.histogram("conv1_out", tf.reshape(h_conv1, [-1]))
 
     with tf.name_scope('pool1'):
@@ -66,7 +76,8 @@ with default_graph.as_default():
     with tf.name_scope('conv2'):
         W_conv2 = weight_variable([3, 3, 36, 32])
         b_conv2 = bias_variable([32])
-        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2), conv_keep_prob, noise_shape=[1, 1, 32])
+        h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2),
+                                conv_keep_prob, noise_shape=[1, 1, 32])
         tf.summary.histogram("conv2_out", tf.reshape(h_conv2, [-1]))
 
     with tf.name_scope('pool2'):

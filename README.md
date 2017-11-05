@@ -28,3 +28,17 @@ https://agray3.github.io/2016/11/29/Demystifying-Data-Input-to-TensorFlow-for-De
  -[X] Use thresholded images for training (not required, since we do blur during training).
  -[X] Add zoomed images to training [Using keras image augmentation]
  -[ ] Crop images at font boundary for training and inference (using histograms).
+
+
+# Document Structure
+## Network structure
+  - Show 5x5 learnt kernels
+## Image Data Augmentation
+## Test/Validation data distribution
+## Test/Validation data performance per character
+## What worked and what didn't
+  - issue with gaussian blur (7x7)
+  - salt pepper noise
+## Improve augmented data distribution
+  - Reduce the training set size
+  - Increase variation
