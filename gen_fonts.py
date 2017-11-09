@@ -63,7 +63,7 @@ def get_file_name(fnt, ch):
 
 
 def create_font_images(base_dir='fonts/base'):
-    for ch in chars:
+    for ch in chars_list:
         target_dir = os.path.join(base_dir, ch)
         if not os.path.exists(target_dir):
             os.mkdir(target_dir)
@@ -80,32 +80,60 @@ def create_font_images(base_dir='fonts/base'):
 
 
 def stretch_vertical(img, factor=1.8):
-    img_resize = transform.resize(img, (img.shape[0] * factor, img.shape[1]))
+    img_resize = transform.resize(img, (img.shape[0] * factor, img.shape[1]),
+                                  preserve_range=True)
     padding = utils.get_padding(img_resize.shape[0], img_resize.shape[1], img.shape[0], img.shape[1])
     img_padded = np.pad(img_resize, padding, mode='constant')
-    return transform.resize(img_padded, img.shape)
+    return np.uint8(transform.resize(img_padded, img.shape,
+                                     preserve_range=True))
 
 
-def stretch_horizontal(img, factor=1.5):
-    img_resize = transform.resize(img, (img.shape[0], int(img.shape[1] * factor)))
+def stretch_horizontal(img, factor=1.8):
+    img_resize = transform.resize(img, (img.shape[0], int(img.shape[1] *
+                                                          factor)),
+                                  preserve_range=True)
     padding = utils.get_padding(img_resize.shape[0], img_resize.shape[1], img.shape[0], img.shape[1])
     img_padded = np.pad(img_resize, padding, mode='constant')
-    return transform.resize(img_padded, img.shape)
+    return np.uint8(transform.resize(img_padded, img.shape,
+                                     preserve_range=True))
 
+def crop_image(img):
+	v = np.sum(img, axis=1)
+	h = np.sum(img, axis=0)
+	start_i = start_j = 0
+	end_i = len(v)-1
+	end_j = len(h)-1
+	for i in range(len(v)):
+		if v[i]:
+			start_i = i
+			break
+
+	for i in range(len(v)-1, 0, -1):
+		if v[i]:
+			end_i = i
+			break
+
+	for i in range(len(h)):
+		if h[i]:
+			start_j = i
+			break
+
+	for i in range(len(h)-1, 0, -1):
+		if h[i]:
+			end_j = i
+			break
+
+	return np.uint8(transform.resize(img[start_i:end_i, start_j:end_j], img.shape, preserve_range=True))
 
 def erode_image(img):
     """Erode and threshold an image."""
 
-    img_erode = morphology.erosion(img)
-    img_erode_th = img_erode > filters.threshold_otsu(img_erode)
-    return 255 * img_erode_th
+    return morphology.erosion(img)
 
 def dilate_image(img):
     """Dilate and threshold an image."""
 
-    img_dilate = morphology.dilation(img)
-    img_dilate_th = img_dilate > filters.threshold_otsu(img_dilate)
-    return 255 * img_dilate_th
+    return morphology.dilation(img)
 
 def gen_augmented_images():
     list_font_jpg = tmp.recursive_find_files('fonts/base', '.*jpeg')
@@ -121,7 +149,7 @@ def gen_augmented_images():
     for path in list_font_jpg:
         img = io.imread(path, as_grey=True) 
         cat = os.path.basename(os.path.dirname(path))
-        file_basename = os.path.basename(path)
+        file_basename, ext = os.path.basename(path).split('.')
         x = img[np.newaxis, :, :, np.newaxis]
         i = 0
         print(args.train_dir)
@@ -131,32 +159,44 @@ def gen_augmented_images():
             os.mkdir(target_dir)
         for batch in datagen.flow(x, ['0'], batch_size=1, shuffle=True):
             aug_img = np.uint8(batch[0][0].reshape(40, 30))
-            if i > 500:
+            if i > 200:
                 print('Done generating %s' % cat)
                 break  # otherwise the generator would loop indefinitely
 
             if random.uniform(0, 1) < 0.2:
                 stretched_img = stretch_vertical(aug_img)
                 file_path = os.path.join(target_dir, file_basename + '.vstretch.' + str(i) + '.jpeg')
-                io.imsave(file_path, stretched_img)
+                #io.imsave(file_path, stretched_img)
+                print(cv2.imwrite(file_path, stretched_img))
                 i += 1
 
             if random.uniform(0, 1) < 0.2:
                 stretched_img = stretch_horizontal(aug_img)
                 file_path = os.path.join(target_dir, file_basename + '.hstretch.' + str(i) + '.jpeg')
-                io.imsave(file_path, stretched_img)
+                #io.imsave(file_path, stretched_img)
+                print(cv2.imwrite(file_path, stretched_img))
                 i += 1
 
             if random.uniform(0, 1) < 0.2:
                 dilated_image = dilate_image(aug_img)
                 file_path = os.path.join(target_dir, file_basename + '.dilate.' + str(i) + '.jpeg')
-                io.imsave(file_path, dilated_image)
+                #io.imsave(file_path, dilated_image)
+                print(cv2.imwrite(file_path, dilated_image))
+                i += 1
+
+            if random.uniform(0, 1) < 0.1:
+                eroded_image = erode_image(aug_img)
+                file_path = os.path.join(target_dir, file_basename + '.erode.' + str(i) + '.jpeg')
+                #io.imsave(file_path, eroded_image)
+                print(cv2.imwrite(file_path, eroded_image))
                 i += 1
 
             if random.uniform(0, 1) < 0.2:
-                eroded_image = erode_image(aug_img)
-                file_path = os.path.join(target_dir, file_basename + '.erode.' + str(i) + '.jpeg')
-                io.imsave(file_path, eroded_image)
+                cropped_image = crop_image(aug_img)
+                file_path = os.path.join(target_dir, file_basename + '.crop.' +
+                                         str(i) + '.jpeg')
+                #io.imsave(file_path, cropped_image)
+                print(cv2.imwrite(file_path, cropped_image))
                 i += 1
 
             file_path = os.path.join(target_dir, file_basename + str(i) + '.jpeg')
@@ -167,8 +207,8 @@ def gen_augmented_images():
 if __name__ == '__main__':
     if args.refresh_base:
         fonts_list = [
-            ImageFont.truetype(file, 32*4) for file in map(lambda p: os.path.join(font_path_base, p), font_paths)
-        ] + [ImageFont.truetype('ipython/SairaExtraCondensed-Regular.ttf', 32*4)]
+     #       ImageFont.truetype(file, 32*4) for file in map(lambda p: os.path.join(font_path_base, p), font_paths)
+       ] + [ImageFont.truetype('fonts/SairaExtraCondensed-Regular.ttf', 32*4), ImageFont.truetype('fonts/BarlowCondensed-Regular.ttf', 32*4)]
         print('Creating base font images')
         create_font_images()
 
