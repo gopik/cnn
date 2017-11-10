@@ -116,9 +116,7 @@ with default_graph.as_default():
     global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
     rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.95, decay_steps=1000)
     tf.summary.scalar(name='learning_rate', tensor=rate)
-    optimizer = tf.train.AdamOptimizer(1e-4)
-    gradients = optimizer.compute_gradients(cross_entropy)
-    training_step = optimizer.apply_gradients(grads_and_vars=gradients, global_step=global_step)
+    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
     if args.norm_clipping:
         with tf.control_dependencies([training_step]):
             norm_clipping_step = [
@@ -134,19 +132,6 @@ with default_graph.as_default():
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
-    # w_conv1_r1 = tf.concat(tf.unstack(tf.reshape(W_conv1, [6, 6, 3, 3, 1]), axis=1), axis=2)
-    # w_conv1_r1 = tf.stack([tf.concat(tf.unstack(w_conv1_r1), axis=0)])
-    #
-    # tf.summary.image(name='W_conv1_weights', tensor=w_conv1_r1, max_outputs=6)
-    #
-    # conv_grad = None
-    # for (g, v) in gradients:
-    #     if v == W_conv1:
-    #         conv_grad = g
-    #         break
-    #
-    # tf.summary.histogram(name='conv_image_grad', values=conv_grad)
-    #
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
     merged_summaries = tf.summary.merge_all()
