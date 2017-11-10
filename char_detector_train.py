@@ -8,6 +8,8 @@ import tensorflow as tf
 from tf_image_reader import TFImageReader
 from utils import weight_variable, bias_variable, conv2d, max_pool_2x2, salt_and_pepper
 
+from memory_profiler import profile
+
 parser = argparse.ArgumentParser(description='Train CNN for MNIST')
 parser.add_argument('--save_model_dir', help='Path to save exported model. Model will be exported only if provided')
 parser.add_argument('--num_training_steps', type=int, default=1000, help='Number of steps to run the training for')
@@ -128,7 +130,7 @@ with default_graph.as_default():
             ]
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
 
@@ -147,6 +149,7 @@ with default_graph.as_default():
     #
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
+    merged_summaries = tf.summary.merge_all()
 
 
 def export_saved_model(export_dir, session, as_text):
@@ -174,37 +177,48 @@ with default_graph.as_default():
 
 CHECKPOINT_FILE_NAME = 'checkpoint'
 
-with tf.Session(graph=default_graph) as sess:
-    latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
-    if latest_checkpoint:
-        saver.restore(sess, latest_checkpoint)
-    else:
-        sess.run(tf.global_variables_initializer())
+@profile
+def run_session():
+    with tf.Session(graph=default_graph) as sess:
+        latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
+        if latest_checkpoint:
+            saver.restore(sess, latest_checkpoint)
+        else:
+            sess.run(tf.global_variables_initializer())
 
-    validation_dataset_iterator = iter(val_dataset)
-    if args.save_model_dir:
-        export_saved_model(args.save_model_dir, session=sess, as_text=True)
+        sess.graph.finalize()
+        tf.get_default_graph().finalize()
+        train_dataset_iterator = iter(train_dataset)
+        validation_dataset_iterator = iter(val_dataset)
+        if args.save_model_dir:
+            export_saved_model(args.save_model_dir, session=sess, as_text=True)
 
-    for i, (images, labels) in zip(range(args.num_training_steps), train_dataset):
-        if i % args.checkpoint_every == 0:
-            train_accuracy = accuracy.eval(feed_dict={
-                x: images, y_: labels, keep_prob: 1.0
-            })
-            global_step_index = sess.run(global_step,
-                                         feed_dict={x: images, y_: labels})
-            if args.checkpoint_dir:
-                saver.save(sess, os.path.join(args.checkpoint_dir, CHECKPOINT_FILE_NAME), global_step=global_step)
-            print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, global_step_index))
-
-        summaries, _, step_id, y_orig, y_comp, cross_entropy_val = sess.run(
-            [tf.summary.merge_all(), training_step, global_step, y_, y_conv, cross_entropy],
-            feed_dict={x: images, y_: labels,
+        for i in range(args.num_training_steps):
+            images, labels = next(train_dataset)
+            summaries, train_step_result, step_id = sess.run([merged_summaries, training_step, global_step],
+                feed_dict={x: images, y_: labels,
                        keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.6,
                        is_training: args.use_salt_pepper_noise})
 
-        summary_writer_train.add_summary(summaries, step_id)
+            summary_writer_train.add_summary(summaries, step_id)
 
-        validation_images, validation_labels = next(validation_dataset_iterator)
-        summaries, accuracy_val = sess.run([tf.summary.merge_all(), accuracy],
+            validation_images, validation_labels = next(validation_dataset_iterator)
+            summaries, accuracy_val = sess.run([merged_summaries, accuracy],
                                            feed_dict={x: 255 - validation_images, y_: validation_labels})
-        summary_writer_val.add_summary(summaries, step_id)
+            summary_writer_val.add_summary(summaries, step_id)
+
+            if i % args.checkpoint_every == 0:
+                feed_dict_eval = {
+                    x: images, y_: labels, keep_prob: 1.0}
+                train_accuracy = sess.run(accuracy, feed_dict=feed_dict_eval)
+                if args.checkpoint_dir:
+                    saver.save(sess, os.path.join(args.checkpoint_dir,
+                                                  CHECKPOINT_FILE_NAME),
+                               global_step=step_id,
+                               write_meta_graph=False)
+                    print("step %d, accuracy=%f, global_step=%d" % (i,
+                                                                    train_accuracy,
+                                                                   step_id))
+
+
+run_session()
