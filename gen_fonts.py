@@ -12,7 +12,7 @@ from skimage import filters, morphology, io, transform
 
 parser = argparse.ArgumentParser(description='Generate font data for training')
 parser.add_argument('--refresh_base', help='generate base font images from font files', type=bool, default=False)
-parser.add_argument('--train_dir', help='directory where training data is created', default='/home/gopik/github/cnn/fonts/train')
+parser.add_argument('--train_dir', help='directory where training data is created', default='fonts/train')
 
 args = parser.parse_args()
 
