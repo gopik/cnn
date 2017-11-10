@@ -113,19 +113,19 @@ with default_graph.as_default():
 
     softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
-    global_step = tf.Variable(name='global_step', initial_value=0, dtype=tf.int32, trainable=False)
-    rate = tf.train.exponential_decay(1e-4, global_step, decay_rate=0.95, decay_steps=1000)
     tf.summary.scalar(name='learning_rate', tensor=rate)
-    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-    if args.norm_clipping:
-        with tf.control_dependencies([training_step]):
-            norm_clipping_step = [
-                W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
-                W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
-                W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
-                W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
-                W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
-            ]
+    global_step = tf.Variable(0, trainable=False, name='global_step')
+    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropyi,
+                                                          global_step=global_step)
+#    if args.norm_clipping:
+#        with tf.control_dependencies([training_step]):
+#            norm_clipping_step = [
+#                W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
+#                W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
+#                W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
+#                W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
+#                W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
+#            ]
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
