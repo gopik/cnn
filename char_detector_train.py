@@ -8,8 +8,6 @@ import tensorflow as tf
 from tf_image_reader import TFImageReader
 from utils import weight_variable, bias_variable, conv2d, max_pool_2x2, salt_and_pepper
 
-from memory_profiler import profile
-
 parser = argparse.ArgumentParser(description='Train CNN for MNIST')
 parser.add_argument('--save_model_dir', help='Path to save exported model. Model will be exported only if provided')
 parser.add_argument('--num_training_steps', type=int, default=1000, help='Number of steps to run the training for')
@@ -51,14 +49,17 @@ with default_graph.as_default():
                                    shape=[1, 40, 30, 1], name='pepper_noise', dtype=tf.float32)
 
         noise_salt = 1 - tf.constant(salt_and_pepper((40, 30), zero_prob=0.98),
-                                 shape=[1, 40, 30, 1], name='salt_noise')
+                                     shape=[1, 40, 30, 1], name='salt_noise')
+
 
         def salt_pepper_noise(data):
             return 255 - (255 - data * salt_and_pepper((1, 40, 30, 1),
-                                                       zero_prob=0.01)) * salt_and_pepper((1, 40, 30, 1), zero_prob=0.01)
+                                                       zero_prob=0.01)) * salt_and_pepper((1, 40, 30, 1),
+                                                                                          zero_prob=0.01)
+
 
         x_noise_input = tf.cond(is_training, lambda: salt_pepper_noise(x_input), lambda: x_input)
-        #x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
+        # x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
 
         x_image = tf.pad(x_noise_input, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
@@ -113,19 +114,18 @@ with default_graph.as_default():
 
     softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
-    tf.summary.scalar(name='learning_rate', tensor=rate)
     global_step = tf.Variable(0, trainable=False, name='global_step')
-    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropyi,
+    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy,
                                                           global_step=global_step)
-#    if args.norm_clipping:
-#        with tf.control_dependencies([training_step]):
-#            norm_clipping_step = [
-#                W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
-#                W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
-#                W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
-#                W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
-#                W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
-#            ]
+    #    if args.norm_clipping:
+    #        with tf.control_dependencies([training_step]):
+    #            norm_clipping_step = [
+    #                W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
+    #                W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
+    #                W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
+    #                W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
+    #                W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
+    #            ]
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
@@ -162,7 +162,7 @@ with default_graph.as_default():
 
 CHECKPOINT_FILE_NAME = 'checkpoint'
 
-@profile
+
 def run_session():
     with tf.Session(graph=default_graph) as sess:
         latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
@@ -171,25 +171,24 @@ def run_session():
         else:
             sess.run(tf.global_variables_initializer())
 
-        sess.graph.finalize()
-        tf.get_default_graph().finalize()
         train_dataset_iterator = iter(train_dataset)
         validation_dataset_iterator = iter(val_dataset)
         if args.save_model_dir:
             export_saved_model(args.save_model_dir, session=sess, as_text=True)
 
         for i in range(args.num_training_steps):
-            images, labels = next(train_dataset)
-            summaries, train_step_result, step_id = sess.run([merged_summaries, training_step, global_step],
-                feed_dict={x: images, y_: labels,
-                       keep_prob: args.dropout_keep_ratio, conv_keep_prob: 0.6,
-                       is_training: args.use_salt_pepper_noise})
+            images, labels = next(train_dataset_iterator)
 
+            summaries, train_step_result, step_id = sess.run([merged_summaries, training_step, global_step],
+                                                             feed_dict={x: images, y_: labels,
+                                                                        keep_prob: args.dropout_keep_ratio,
+                                                                        conv_keep_prob: 0.6,
+                                                                        is_training: args.use_salt_pepper_noise})
             summary_writer_train.add_summary(summaries, step_id)
 
             validation_images, validation_labels = next(validation_dataset_iterator)
             summaries, accuracy_val = sess.run([merged_summaries, accuracy],
-                                           feed_dict={x: 255 - validation_images, y_: validation_labels})
+                                               feed_dict={x: 255 - validation_images, y_: validation_labels})
             summary_writer_val.add_summary(summaries, step_id)
 
             if i % args.checkpoint_every == 0:
@@ -203,7 +202,8 @@ def run_session():
                                write_meta_graph=False)
                     print("step %d, accuracy=%f, global_step=%d" % (i,
                                                                     train_accuracy,
-                                                                   step_id))
+                                                                    step_id))
+
 
 
 run_session()

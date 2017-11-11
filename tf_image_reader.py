@@ -24,7 +24,6 @@ class TFImageReader(object):
         self.session = tf.Session(graph=self.graph)
 
     def __iter__(self):
-        self.id = 0
         with self.graph.as_default():
             self.iterator_tensor = self.dataset.make_one_shot_iterator().get_next()
             return self
