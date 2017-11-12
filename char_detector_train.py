@@ -30,9 +30,6 @@ default_graph = tf.Graph()
 train_dataset = TFImageReader(args.train_dataset, args.batch_size,
                               unlimited=True)
 val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=True)
-mean_dataset = TFImageReader(args.train_dataset, 1)
-
-blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)[:, :, np.newaxis, np.newaxis]
 
 # For tf.variable_scope vs tf.name_scope,
 #  see
@@ -59,7 +56,6 @@ with default_graph.as_default():
 
 
         x_noise_input = tf.cond(is_training, lambda: salt_pepper_noise(x_input), lambda: x_input)
-        # x_image_sub_mean = conv2d(x_noise_input, tf.constant(blur_filter, dtype=tf.float32))
 
         x_image = tf.pad(x_noise_input, [[0, 0], [0, 0], [1, 1], [0, 0]])
 
