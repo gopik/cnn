@@ -30,8 +30,8 @@ def predict(r, path):
     img = cv2.resize(padded_img, (30, 40), cv2.INTER_AREA)
     img = img[np.newaxis, :, :, np.newaxis]
     prediction = r.predict(255 - img)
-    #result = (chars[np.argmax(prediction[:, :11])], chars[11 + np.argmax(prediction[:, 11:])])
-    return chars[np.argmax(prediction)]
+    result = (chars[np.argmax(prediction[:, :11])], chars[11 + np.argmax(prediction[:, 11:])])
+    #return chars[np.argmax(prediction)]
     return result
 
 

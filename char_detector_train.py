@@ -1,11 +1,9 @@
 import argparse
 import os.path
+from tf_image_reader import TFImageReader
 
-import cv2
-import numpy as np
 import tensorflow as tf
 
-from tf_image_reader import TFImageReader
 from utils import weight_variable, bias_variable, conv2d, max_pool_2x2, salt_and_pepper
 
 parser = argparse.ArgumentParser(description='Train CNN for MNIST')
@@ -13,14 +11,16 @@ parser.add_argument('--save_model_dir', help='Path to save exported model. Model
 parser.add_argument('--num_training_steps', type=int, default=1000, help='Number of steps to run the training for')
 parser.add_argument('--checkpoint_dir',
                     help='Path to load/save checkpoint. If provided, latest checkpoint will be loaded from here')
-parser.add_argument('--checkpoint_every', type=int, help='Num iterations to checkpoint after', default=100)
+parser.add_argument('--checkpoint_every', type=int, help='Num iterations tocheckpoint after', default=1000)
 parser.add_argument('--batch_size', type=int, default=50)
 parser.add_argument('--logdir', default='/tmp/cnn/logs')
-parser.add_argument('--dropout_keep_ratio', type=float, default=0.5)
+parser.add_argument('--dropout_keep_ratio', type=float, default=0.6)
+parser.add_argument('--conv_dropout_keep_ratio', type=float, default=0.6)
 parser.add_argument('--train_dataset', default='/tmp/fonts/small_tx/out/train-00000-of-00001')
 parser.add_argument('--validation_dataset', default='/tmp/fonts/small_tx/out/validation-00000-of-00001')
 parser.add_argument('--norm_clipping', default=False, type=bool)
 parser.add_argument('--use_salt_pepper_noise', default=False, type=bool)
+parser.add_argument('--loss_type', choices=['softmax', 'hinge'], default='softmax')
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # Show all logs
 args = parser.parse_args()
@@ -112,10 +112,15 @@ with default_graph.as_default():
 
         y_conv = tf.add(tf.matmul(h_fc1_drop, W_fc2), b_fc2, name='y_conv')
 
-    softmax_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
-    cross_entropy = tf.reduce_mean(softmax_cross_entropy, name='cross_entropy')
+    if args.loss_type == 'softmax':
+        print("Minimizing softmax loss")
+        loss = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
+    else:
+        print("Minimizing hinge loss")
+        loss = tf.losses.hinge_loss(labels=y_, logits=y_conv)
+
     global_step = tf.Variable(0, trainable=False, name='global_step')
-    training_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy,
+    training_step = tf.train.AdamOptimizer(1e-4).minimize(loss,
                                                           global_step=global_step)
     #    if args.norm_clipping:
     #        with tf.control_dependencies([training_step]):
@@ -130,8 +135,9 @@ with default_graph.as_default():
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
     tf.summary.scalar(name='accuracy', tensor=accuracy)
-    tf.summary.scalar(name='cross_entropy_loss', tensor=cross_entropy)
-
+    tf.summary.scalar(name='cross_entropy_loss', tensor=loss)
+    tf.summary.image(tensor=tf.depth_to_space(tf.transpose(W_conv1, [2, 0, 1, 3]), data_format="NHWC", block_size=6),
+                     name='W_conv1')
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
     merged_summaries = tf.summary.merge_all()
@@ -182,7 +188,8 @@ def run_session():
             summaries, train_step_result, step_id = sess.run([merged_summaries, training_step, global_step],
                                                              feed_dict={x: images, y_: labels,
                                                                         keep_prob: args.dropout_keep_ratio,
-                                                                        conv_keep_prob: 0.6,
+                                                                        conv_keep_prob:
+                                                                            1.0,
                                                                         is_training: args.use_salt_pepper_noise})
             summary_writer_train.add_summary(summaries, step_id)
 
@@ -200,10 +207,7 @@ def run_session():
                                                   CHECKPOINT_FILE_NAME),
                                global_step=step_id,
                                write_meta_graph=False)
-                    print("step %d, accuracy=%f, global_step=%d" % (i,
-                                                                    train_accuracy,
-                                                                    step_id))
-
+                print("step %d, accuracy=%f, global_step=%d" % (i, train_accuracy, step_id))
 
 
 run_session()
