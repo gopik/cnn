@@ -188,8 +188,7 @@ def run_session():
             summaries, train_step_result, step_id = sess.run([merged_summaries, training_step, global_step],
                                                              feed_dict={x: images, y_: labels,
                                                                         keep_prob: args.dropout_keep_ratio,
-                                                                        conv_keep_prob:
-                                                                            1.0,
+                                                                        conv_keep_prob: args.conv_dropout_keep_ratio,
                                                                         is_training: args.use_salt_pepper_noise})
             summary_writer_train.add_summary(summaries, step_id)
 
