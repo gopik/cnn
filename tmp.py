@@ -8,6 +8,7 @@ import glob
 import utils
 
 
+
 def recursive_find_files(root_dir, pattern):
     """Returns a list of files matching the pattern starting from root_dir"""
     files_list = []

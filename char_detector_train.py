@@ -31,6 +31,16 @@ train_dataset = TFImageReader(args.train_dataset, args.batch_size,
                               unlimited=True)
 val_dataset = TFImageReader(args.validation_dataset, args.batch_size, unlimited=True)
 
+
+def svm_loss(labels, logits):
+    # convert one hot to dense
+    y = tf.cast(tf.argmax(labels, axis=1), tf.int32)
+    nrows = tf.shape(logits)[0]
+    correct_score_indices = tf.stack([tf.range(start=0, limit=nrows), y], axis=1)
+    correct_class_scores = tf.gather_nd(logits, correct_score_indices)
+    margins = tf.maximum(0.0, logits - tf.reshape(correct_class_scores, [nrows, 1]) + 1.0)
+    return tf.reduce_sum(margins - tf.cast(labels, tf.float32)) / tf.cast(nrows, tf.float32)
+
 # For tf.variable_scope vs tf.name_scope,
 #  see
 #  https://stackoverflow.com/questions/35919020/whats-the-difference-of-name-scope-and-a-variable-scope-in-tensorflow
@@ -113,7 +123,7 @@ with default_graph.as_default():
         loss = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv)
     else:
         print("Minimizing hinge loss")
-        loss = tf.losses.hinge_loss(labels=y_, logits=y_conv)
+        loss = svm_loss(labels=y_, logits=y_conv)
 
     global_step = tf.Variable(0, trainable=False, name='global_step')
     training_step = tf.train.AdamOptimizer(1e-4).minimize(loss,
