@@ -142,8 +142,7 @@ with default_graph.as_default():
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=loss)
-    tf.summary.image(tensor=tf.depth_to_space(tf.transpose(W_conv1, [2, 0, 1, 3]), data_format="NHWC", block_size=6),
-                     name='W_conv1')
+    w_conv1_summary = tf.summary.image(tensor=tf.transpose(W_conv1, [3, 0, 1, 2]), name='W_conv1', collections = ["private"])
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
     merged_summaries = tf.summary.merge_all()
@@ -199,7 +198,7 @@ def run_session():
             summary_writer_train.add_summary(summaries, step_id)
 
             validation_images, validation_labels = next(validation_dataset_iterator)
-            summaries, accuracy_val = sess.run([merged_summaries, accuracy],
+            summaries, w_conv1_summary_value, accuracy_val = sess.run([merged_summaries, w_conv1_summary, accuracy],
                                                feed_dict={x: 255 - validation_images, y_: validation_labels})
             summary_writer_val.add_summary(summaries, step_id)
 
