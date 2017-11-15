@@ -1,9 +1,12 @@
 import argparse
+import io
 import os.path
-from tf_image_reader import TFImageReader
 
+import numpy as np
+import png
 import tensorflow as tf
 
+from tf_image_reader import TFImageReader
 from utils import weight_variable, bias_variable, conv2d, max_pool_2x2, salt_and_pepper
 
 parser = argparse.ArgumentParser(description='Train CNN for MNIST')
@@ -40,6 +43,7 @@ def svm_loss(labels, logits):
     correct_class_scores = tf.gather_nd(logits, correct_score_indices)
     margins = tf.maximum(0.0, logits - tf.reshape(correct_class_scores, [nrows, 1]) + 1.0)
     return tf.reduce_sum(margins - tf.cast(labels, tf.float32)) / tf.cast(nrows, tf.float32)
+
 
 # For tf.variable_scope vs tf.name_scope,
 #  see
@@ -142,7 +146,8 @@ with default_graph.as_default():
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='cross_entropy_loss', tensor=loss)
-    w_conv1_summary = tf.summary.image(tensor=tf.transpose(W_conv1, [3, 0, 1, 2]), name='W_conv1', collections = ["private"])
+    w_conv1_summary = tf.summary.image(tensor=tf.transpose(W_conv1, [3, 0, 1, 2]), name='W_conv1',
+                                       collections=["private"], max_outputs=36)
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
     merged_summaries = tf.summary.merge_all()
@@ -174,6 +179,40 @@ with default_graph.as_default():
 CHECKPOINT_FILE_NAME = 'checkpoint'
 
 
+def build_image_summary(w_conv1_summary_string, h=5, w=5, r=6, c=6):
+    w_conv1_summary = tf.Summary()
+    w_conv1_summary.ParseFromString(w_conv1_summary_string)
+    idx = 0
+    img_rows = []
+    for nrows in range(r):
+        img_cols = []
+        for ncols in range(c):
+            _, _, img, _ = png.Reader(bytes=w_conv1_summary.value[idx].image.encoded_image_string).read_flat()
+            img_cols.append(np.array(img).reshape(h, w))
+            img_cols.append(255*np.ones(shape=(h, 1)))
+        col = np.concatenate(img_cols[:-1], axis=1)
+        img_rows.append(col)
+        img_rows.append(255*np.ones(shape=(1, col.shape[1])))
+        idx += 1
+        if idx == len(w_conv1_summary.value):
+            break
+
+    img_sprite = np.concatenate(img_rows[:-1])
+    print(img_sprite.shape)
+
+    del w_conv1_summary.value[:]
+    img_metadata = w_conv1_summary.value.add().image
+    img_metadata.height = img_sprite.shape[0]
+    img_metadata.width = img_sprite.shape[1]
+    img_metadata.colorspace = 1
+
+    sio = io.BytesIO()
+    png.fromarray(img_sprite, 'L', {'bitdepth':8}).save(sio)
+    img_metadata.encoded_image_string = sio.getvalue()
+    return w_conv1_summary.SerializeToString()
+
+
+
 def run_session():
     with tf.Session(graph=default_graph) as sess:
         latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir=args.checkpoint_dir)
@@ -199,8 +238,11 @@ def run_session():
 
             validation_images, validation_labels = next(validation_dataset_iterator)
             summaries, w_conv1_summary_value, accuracy_val = sess.run([merged_summaries, w_conv1_summary, accuracy],
-                                               feed_dict={x: 255 - validation_images, y_: validation_labels})
+                                                                      feed_dict={x: 255 - validation_images,
+                                                                                 y_: validation_labels})
+            image_summary = build_image_summary(w_conv1_summary_value)
             summary_writer_val.add_summary(summaries, step_id)
+            summary_writer_val.add_summary(image_summary, step_id)
 
             if i % args.checkpoint_every == 0:
                 feed_dict_eval = {
