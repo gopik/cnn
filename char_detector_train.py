@@ -190,15 +190,14 @@ def build_image_summary(w_conv1_summary_string, h=5, w=5, r=6, c=6):
             _, _, img, _ = png.Reader(bytes=w_conv1_summary.value[idx].image.encoded_image_string).read_flat()
             img_cols.append(np.array(img).reshape(h, w))
             img_cols.append(255*np.ones(shape=(h, 1)))
+            idx += 1
         col = np.concatenate(img_cols[:-1], axis=1)
         img_rows.append(col)
         img_rows.append(255*np.ones(shape=(1, col.shape[1])))
-        idx += 1
         if idx == len(w_conv1_summary.value):
             break
 
     img_sprite = np.concatenate(img_rows[:-1])
-    print(img_sprite.shape)
 
     del w_conv1_summary.value[:]
     img_metadata = w_conv1_summary.value.add().image
