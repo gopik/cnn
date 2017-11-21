@@ -104,22 +104,22 @@ def crop_image(img):
 	end_i = len(v)-1
 	end_j = len(h)-1
 	for i in range(len(v)):
-		if v[i]:
+		if v[i] > 50:
 			start_i = i
 			break
 
 	for i in range(len(v)-1, 0, -1):
-		if v[i]:
+		if v[i] > 50:
 			end_i = i
 			break
 
 	for i in range(len(h)):
-		if h[i]:
+		if h[i] > 50:
 			start_j = i
 			break
 
 	for i in range(len(h)-1, 0, -1):
-		if h[i]:
+		if h[i] > 50:
 			end_j = i
 			break
 
@@ -177,19 +177,19 @@ def gen_augmented_images():
                 print(cv2.imwrite(file_path, stretched_img))
                 i += 1
 
-            if random.uniform(0, 1) < 0.2:
-                dilated_image = dilate_image(aug_img)
-                file_path = os.path.join(target_dir, file_basename + '.dilate.' + str(i) + '.jpeg')
-                #io.imsave(file_path, dilated_image)
-                print(cv2.imwrite(file_path, dilated_image))
-                i += 1
-
-            if random.uniform(0, 1) < 0.1:
-                eroded_image = erode_image(aug_img)
-                file_path = os.path.join(target_dir, file_basename + '.erode.' + str(i) + '.jpeg')
-                #io.imsave(file_path, eroded_image)
-                print(cv2.imwrite(file_path, eroded_image))
-                i += 1
+#            if random.uniform(0, 1) < 0.2:
+#                dilated_image = dilate_image(aug_img)
+#                file_path = os.path.join(target_dir, file_basename + '.dilate.' + str(i) + '.jpeg')
+#                #io.imsave(file_path, dilated_image)
+#                print(cv2.imwrite(file_path, dilated_image))
+#                i += 1
+#
+#            if random.uniform(0, 1) < 0.1:
+#                eroded_image = erode_image(aug_img)
+#                file_path = os.path.join(target_dir, file_basename + '.erode.' + str(i) + '.jpeg')
+#                #io.imsave(file_path, eroded_image)
+#                print(cv2.imwrite(file_path, eroded_image))
+#                i += 1
 
             if random.uniform(0, 1) < 0.2:
                 cropped_image = crop_image(aug_img)

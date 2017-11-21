@@ -15,28 +15,30 @@ args = parser.parse_args()
 
 chars = [None] + list(string.digits) + list(string.ascii_uppercase)
 
-blur_filter = cv2.getGaussianKernel(7, 1).dot(cv2.getGaussianKernel(7, 1).T)
 
 def predict(r, path):
-    # filename, _ = os.path.basename(path).split('.')
-    # _, _, x, y, w, h = filename.split('_')
-    # x, y, w, h = int(x), int(y), int(w), int(h)
+    #filename, _ = os.path.basename(path).split('.')
+    #_, _, x, y, w, h = filename.split('_')
+    #x, y, w, h = int(x), int(y), int(w), int(h)
+#    print(x, y, w, h)
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
 #    img = cv2.medianBlur(img, 3)
-    # img_resize = cv2.resize(img, (w, h), cv2.INTER_NEAREST)
+    #img_resize = cv2.resize(img, (w, h), cv2.INTER_NEAREST)
     h, w = img.shape
     img_pad = utils.get_padding(h, w, 40, 30)
     padded_img = np.pad(img, img_pad, mode='constant', constant_values=255)
     img = cv2.resize(padded_img, (30, 40), cv2.INTER_AREA)
     img = img[np.newaxis, :, :, np.newaxis]
     prediction = r.predict(255 - img)
+#    print(prediction)
     result = (chars[np.argmax(prediction[:, :11])], chars[11 + np.argmax(prediction[:, 11:])])
     #return chars[np.argmax(prediction)]
     return result
 
 
 def main():
-    rec = glob.glob('/home/gopik/github/cnn/data/lot2/outputs/**/recognized*.jpg', recursive=True)
+    sample_df = pd.DataFrame.from_csv('data/samples.csv')
+    rec = glob.glob('/home/gopik/github/cnn/data/lot1/outputs/**/recognized*.jpg', recursive=True)
     df = pd.DataFrame({'file_path': rec})
     df = df.assign(cat=lambda d: d['file_path'].apply(lambda fp: os.path.basename(fp).split('_')[1]))
     r = Recognizer(args.save_model_dir)
