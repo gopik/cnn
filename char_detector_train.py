@@ -42,7 +42,7 @@ def svm_loss(labels, logits):
     correct_score_indices = tf.stack([tf.range(start=0, limit=nrows), y], axis=1)
     correct_class_scores = tf.gather_nd(logits, correct_score_indices)
     margins = tf.maximum(0.0, logits - tf.reshape(correct_class_scores, [nrows, 1]) + 1.0)
-    return tf.reduce_sum(margins - tf.cast(labels, tf.float32)) / tf.cast(nrows, tf.float32)
+    return tf.reduce_sum(margins - tf.cast(labels, tf.float32), axis=1)
 
 
 # For tf.variable_scope vs tf.name_scope,
@@ -77,38 +77,38 @@ with default_graph.as_default():
     max_norm = tf.constant(4.0)
 
     with tf.name_scope('conv1'):
-        W_conv1 = weight_variable([5, 5, 1, 36])
-        b_conv1 = bias_variable([36])
+        W_conv1 = weight_variable([5, 5, 1, 64])
+        b_conv1 = bias_variable([64])
         h_conv1 = tf.nn.dropout(tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1),
-                                conv_keep_prob, noise_shape=[1, 1, 36])
+                                conv_keep_prob, noise_shape=[1, 1, 64])
         tf.summary.histogram("conv1_out", tf.reshape(h_conv1, [-1]))
 
     with tf.name_scope('pool1'):
         h_pool1 = max_pool_2x2(h_conv1)
 
     with tf.name_scope('conv2'):
-        W_conv2 = weight_variable([3, 3, 36, 32])
-        b_conv2 = bias_variable([32])
+        W_conv2 = weight_variable([3, 3, 64, 64])
+        b_conv2 = bias_variable([64])
         h_conv2 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2),
-                                conv_keep_prob, noise_shape=[1, 1, 32])
+                                conv_keep_prob, noise_shape=[1, 1, 64])
         tf.summary.histogram("conv2_out", tf.reshape(h_conv2, [-1]))
 
     with tf.name_scope('pool2'):
         h_pool2 = max_pool_2x2(h_conv2)
 
-    with tf.name_scope('conv3'):
-        W_conv3 = weight_variable([3, 3, 32, 64])
-        b_conv3 = bias_variable([64])
-        h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), conv_keep_prob, noise_shape=[1, 1, 64])
-        tf.summary.histogram("conv3_out", tf.reshape(h_conv3, [-1]))
+    #with tf.name_scope('conv3'):
+    #    W_conv3 = weight_variable([3, 3, 32, 64])
+    #    b_conv3 = bias_variable([64])
+    #    h_conv3 = tf.nn.dropout(tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3), conv_keep_prob, noise_shape=[1, 1, 64])
+    #    tf.summary.histogram("conv3_out", tf.reshape(h_conv3, [-1]))
 
-    with tf.name_scope('pool3'):
-        h_pool3 = max_pool_2x2(h_conv3)
+    #with tf.name_scope('pool3'):
+    #    h_pool3 = max_pool_2x2(h_conv3)
 
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([5 * 4 * 64, 1024])
+        W_fc1 = weight_variable([10 * 8 * 64, 1024])
         b_fc1 = bias_variable([1024])
-        h_pool3_flat = tf.reshape(h_pool3, [-1, 5 * 4 * 64])
+        h_pool3_flat = tf.reshape(h_pool2, [-1, 10 * 8 * 64])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
         tf.summary.histogram("fc1_out", tf.reshape(h_fc1, [-1]))
 
@@ -129,8 +129,9 @@ with default_graph.as_default():
         print("Minimizing hinge loss")
         loss = svm_loss(labels=y_, logits=y_conv)
 
+    mean_loss = tf.reduce_mean(loss, name="mean_loss")
     global_step = tf.Variable(0, trainable=False, name='global_step')
-    training_step = tf.train.AdamOptimizer(1e-4).minimize(loss,
+    training_step = tf.train.AdamOptimizer(1e-4).minimize(mean_loss,
                                                           global_step=global_step)
     #    if args.norm_clipping:
     #        with tf.control_dependencies([training_step]):
@@ -145,7 +146,7 @@ with default_graph.as_default():
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
     tf.summary.scalar(name='accuracy', tensor=accuracy)
-    tf.summary.scalar(name='cross_entropy_loss', tensor=loss)
+    tf.summary.scalar(name='mean_loss', tensor=mean_loss)
     w_conv1_summary = tf.summary.image(tensor=tf.transpose(W_conv1, [3, 0, 1, 2]), name='W_conv1',
                                        collections=["private"], max_outputs=36)
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
