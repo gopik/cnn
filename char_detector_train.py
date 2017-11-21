@@ -148,7 +148,7 @@ with default_graph.as_default():
     tf.summary.scalar(name='accuracy', tensor=accuracy)
     tf.summary.scalar(name='mean_loss', tensor=mean_loss)
     w_conv1_summary = tf.summary.image(tensor=tf.transpose(W_conv1, [3, 0, 1, 2]), name='W_conv1',
-                                       collections=["private"], max_outputs=36)
+                                       collections=["private"], max_outputs=64)
     summary_writer_train = tf.summary.FileWriter(os.path.join(args.logdir, 'train'), graph=default_graph)
     summary_writer_val = tf.summary.FileWriter(os.path.join(args.logdir, 'validation'), graph=default_graph)
     merged_summaries = tf.summary.merge_all()
