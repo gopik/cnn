@@ -240,7 +240,7 @@ def run_session():
             summaries, w_conv1_summary_value, accuracy_val = sess.run([merged_summaries, w_conv1_summary, accuracy],
                                                                       feed_dict={x: 255 - validation_images,
                                                                                  y_: validation_labels})
-            image_summary = build_image_summary(w_conv1_summary_value)
+            image_summary = build_image_summary(w_conv1_summary_value, r=8, c=8)
             summary_writer_val.add_summary(summaries, step_id)
             summary_writer_val.add_summary(image_summary, step_id)
 
