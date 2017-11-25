@@ -152,9 +152,9 @@ def gen_augmented_images():
         file_basename, ext = os.path.basename(path).split('.')
         x = img[np.newaxis, :, :, np.newaxis]
         i = 0
-        print(args.train_dir)
+        #print(args.train_dir)
         target_dir = os.path.join(args.train_dir, cat)
-        print(target_dir)
+        #print(target_dir)
         if not os.path.exists(target_dir):
             os.mkdir(target_dir)
         for batch in datagen.flow(x, ['0'], batch_size=1, shuffle=True):
@@ -167,14 +167,14 @@ def gen_augmented_images():
                 stretched_img = stretch_vertical(aug_img)
                 file_path = os.path.join(target_dir, file_basename + '.vstretch.' + str(i) + '.jpeg')
                 #io.imsave(file_path, stretched_img)
-                print(cv2.imwrite(file_path, stretched_img))
+                cv2.imwrite(file_path, stretched_img)
                 i += 1
 
             if random.uniform(0, 1) < 0.2:
                 stretched_img = stretch_horizontal(aug_img)
                 file_path = os.path.join(target_dir, file_basename + '.hstretch.' + str(i) + '.jpeg')
                 #io.imsave(file_path, stretched_img)
-                print(cv2.imwrite(file_path, stretched_img))
+                cv2.imwrite(file_path, stretched_img)
                 i += 1
 
 #            if random.uniform(0, 1) < 0.2:
@@ -196,7 +196,7 @@ def gen_augmented_images():
                 file_path = os.path.join(target_dir, file_basename + '.crop.' +
                                          str(i) + '.jpeg')
                 #io.imsave(file_path, cropped_image)
-                print(cv2.imwrite(file_path, cropped_image))
+                cv2.imwrite(file_path, cropped_image)
                 i += 1
 
             file_path = os.path.join(target_dir, file_basename + str(i) + '.jpeg')

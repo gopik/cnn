@@ -133,15 +133,15 @@ with default_graph.as_default():
     global_step = tf.Variable(0, trainable=False, name='global_step')
     training_step = tf.train.AdamOptimizer(1e-4).minimize(mean_loss,
                                                           global_step=global_step)
-    #    if args.norm_clipping:
-    #        with tf.control_dependencies([training_step]):
-    #            norm_clipping_step = [
-    #                W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
-    #                W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
-    #                W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
-    #                W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
-    #                W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
-    #            ]
+    if args.norm_clipping:
+         with tf.control_dependencies([training_step]):
+             norm_clipping_step = [
+                    #W_conv3.assign(tf.clip_by_norm(W_conv3.read_value(), 4.0, axes=[1, 2])),
+                    W_conv1.assign(tf.clip_by_norm(W_conv1.read_value(), 4.0, axes=[1, 2])),
+                    W_conv2.assign(tf.clip_by_norm(W_conv2.read_value(), 4.0, axes=[1, 2])),
+                    W_fc1.assign(tf.clip_by_norm(W_fc1.read_value(), 4.0, axes=[1])),
+                    W_fc2.assign(tf.clip_by_norm(W_fc2.read_value(), 4.0, axes=[1]))
+                ]
 
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1), name='compare_prediction')
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
@@ -244,7 +244,7 @@ def run_session():
             summary_writer_val.add_summary(summaries, step_id)
             summary_writer_val.add_summary(image_summary, step_id)
 
-            if i % args.checkpoint_every == 0:
+            if i % args.checkpoint_every == 0 or i == args.num_training_steps - 1:
                 feed_dict_eval = {
                     x: images, y_: labels, keep_prob: 1.0}
                 train_accuracy = sess.run(accuracy, feed_dict=feed_dict_eval)
